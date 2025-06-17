@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data @NoArgsConstructor @AllArgsConstructor
+@Table(name = "sizes")
 public class SizesEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer sizeId;

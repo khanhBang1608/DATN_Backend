@@ -12,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "order_detail")
 public class OrderDetailEntity {
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +39,6 @@ public class OrderDetailEntity {
     @JoinColumn(name = "product_variant_id", nullable = false)
     private ProductVariantEntity productVariant;
 
-    @OneToMany(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ReviewEntity> reviews;
+    @OneToOne(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ReviewEntity review;
 }

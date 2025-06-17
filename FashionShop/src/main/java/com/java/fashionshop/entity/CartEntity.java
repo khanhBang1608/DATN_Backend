@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data @NoArgsConstructor @AllArgsConstructor
+@Table(name = "cart")
 public class CartEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer cartId;

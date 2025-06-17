@@ -1,6 +1,5 @@
 package com.java.fashionshop.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor 
 @AllArgsConstructor
+@Table(name = "review")
 public class ReviewEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer reviewId;
@@ -33,7 +35,7 @@ public class ReviewEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_detail_id", nullable = false)
     private OrderDetailEntity orderDetail;
 
