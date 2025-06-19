@@ -27,7 +27,7 @@ public class SubCategoryEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer subCategoryId;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = 100, columnDefinition = "NVARCHAR(100)")
     private String subCategoryName;
 
     private Boolean status;

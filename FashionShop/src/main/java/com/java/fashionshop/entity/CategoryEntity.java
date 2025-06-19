@@ -22,7 +22,8 @@ public class CategoryEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer categoryId;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = 100, columnDefinition = "NVARCHAR(100)")
+
     private String categoryName;
 
     private String image;
