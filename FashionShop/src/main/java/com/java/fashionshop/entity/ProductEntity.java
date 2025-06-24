@@ -39,8 +39,8 @@ public class ProductEntity {
     private Boolean status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sub_category_id", nullable = false)
-    private SubCategoryEntity subCategory;
+    @JoinColumn(name = "category_id", nullable = false)
+    private CategoryEntity category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariantEntity> variants;
