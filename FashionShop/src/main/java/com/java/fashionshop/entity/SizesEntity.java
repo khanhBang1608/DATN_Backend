@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class SizesEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer sizeId;
-    @Column(nullable = false, unique = true, length = 10)
+    
+    @Column(name = "size_name", nullable = false, unique = true, columnDefinition = "NVARCHAR(20)")
     private String sizeName;
 }

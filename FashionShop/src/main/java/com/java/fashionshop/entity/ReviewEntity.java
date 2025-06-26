@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +29,8 @@ public class ReviewEntity {
     private Integer reviewId;
 
     private Integer rating;
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String comment;
     private LocalDateTime reviewDate = LocalDateTime.now();
 
