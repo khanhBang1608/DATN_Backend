@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.java.fashionshop.bean.RegisterBean;
+import com.java.fashionshop.config.SecurityConfig;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.jpa.JpaUser;
 
@@ -20,7 +21,7 @@ public class UserService {
     private JpaUser userJPA;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // ✅ Dùng bean đã khai báo trong SecurityConfig
+    private PasswordEncoder passwordEncoder;
 
     // Đăng ký tài khoản mới
     public UserEntity registerUser(RegisterBean registerBean) {
@@ -34,7 +35,7 @@ public class UserService {
         user.setFullName(registerBean.getFullName());
         user.setDateCreated(LocalDateTime.now());
         user.setStatus(true);
-        user.setRole(1); // 👈 1 = ADMIN hay USER? Bạn nên đặt rõ enum hoặc constant
+        user.setRole(1); 
         user.setAvatar(null);
         user.setOtp(null);
         user.setOtpExpiry(null);

@@ -23,15 +23,24 @@ public class AddressEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
-
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(100)")
     private String customerName;
     private String phone;
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(300)")
     private String address;
     private Integer provinceId;
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(100)")
     private String provinceName;
     private Integer districtId;
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(100)")
     private String districtName;
     private Integer wardId;
+    
+    @Column(nullable = false, columnDefinition = "NVARCHAR(100)")
     private String wardName;
 }
 
