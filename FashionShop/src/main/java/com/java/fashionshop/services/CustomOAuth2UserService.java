@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -14,6 +15,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.java.fashionshop.entity.CartEntity;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.jpa.JpaUser;
 
@@ -22,6 +24,13 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     @Autowired
     private JpaUser userRepository;
+    
+    @Autowired
+    private CartService cartService;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -59,11 +68,19 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             newUser.setEmail(email);
             newUser.setFullName(name != null ? name : "No Name");
             newUser.setAvatar(avatar);
-            newUser.setPassword(UUID.randomUUID().toString());
+            String rawPassword = UUID.randomUUID().toString();
+            newUser.setPassword(passwordEncoder.encode(rawPassword)); // Password ngẫu nhiên và mã hóa
             newUser.setRole(1); // 1 = USER
             newUser.setStatus(true);
-            userRepository.save(newUser);
+            
+            UserEntity savedUser = userRepository.save(newUser);
+
+            // ✅ Tạo giỏ hàng sau khi tạo user mới bằng Google
+            CartEntity cart = new CartEntity();
+            cart.setUser(savedUser);
+            cartService.save(cart);
         }
+
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),

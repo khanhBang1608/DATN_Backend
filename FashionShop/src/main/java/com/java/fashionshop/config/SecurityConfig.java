@@ -28,21 +28,19 @@ public class SecurityConfig {
 
     private final JwtFilter jwtRequestFilter;
     private final CustomUserDetailsService customUserDetailsService;
-    private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     public SecurityConfig(JwtFilter jwtRequestFilter,
                           CustomUserDetailsService customUserDetailsService,
-                          CustomOAuth2UserService customOAuth2UserService,
                           OAuth2SuccessHandler oAuth2SuccessHandler) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.customUserDetailsService = customUserDetailsService;
-        this.customOAuth2UserService = customOAuth2UserService;
         this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
+    // ✅ Inject CustomOAuth2UserService qua tham số method để tránh circular dependency
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
         http.cors().and().csrf().disable()
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/oauth2/**", "/css/**", "/js/**", "/api/public/**").permitAll()
@@ -51,9 +49,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                .successHandler(oAuth2SuccessHandler) // ✅ handler sinh JWT
+                .successHandler(oAuth2SuccessHandler)
             )
             .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll());
 
