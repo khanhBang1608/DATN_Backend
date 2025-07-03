@@ -43,7 +43,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
         http.cors().and().csrf().disable()
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/oauth2/**", "/css/**", "/js/**", "/api/public/**").permitAll()
+            		.requestMatchers(
+            			    "/",
+            			    "/api/login",
+            			    "/oauth2/**",
+            			    "/css/**",
+            			    "/js/**",
+            			    "/api/register/**",         // 👈 Đăng ký, OTP
+            			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
+            			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
+            			    "/api/products/**"          // 👈 VD thêm nếu có danh sách sản phẩm
+            			).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()
