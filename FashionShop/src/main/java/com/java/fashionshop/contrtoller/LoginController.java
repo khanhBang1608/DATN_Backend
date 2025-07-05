@@ -56,11 +56,11 @@ public class LoginController {
 				UserDTO userDTO = new UserDTO(user.getUserId(), user.getFullName(), user.getEmail(), user.getAvatar(),
 						user.getStatus(), user.getRole());
 
-				Cookie cookie = new Cookie("token", token);
-				cookie.setHttpOnly(true);
-				cookie.setPath("/");
-				cookie.setMaxAge(2 * 60 * 60);
-				response.addCookie(cookie);
+//				Cookie cookie = new Cookie("token", token);
+//				cookie.setHttpOnly(true);
+//				cookie.setPath("/");
+//				cookie.setMaxAge(2 * 60 * 60);
+//				response.addCookie(cookie);
 
 				return ResponseEntity.ok(new LoginResponseDTO(token, userDTO));
 			} else {

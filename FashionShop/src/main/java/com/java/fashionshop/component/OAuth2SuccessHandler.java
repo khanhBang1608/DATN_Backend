@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -40,26 +39,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        String roleValue = String.valueOf(user.getRole());
+        String role = String.valueOf(user.getRole());
+        
+        // 🔐 Tạo JWT token từ JwtUtil
+        String token = jwtUtil.generateToken(email, role);
+        
+        
 
-        String token = jwtUtil.generateToken(email, roleValue);
-
-        // ✅ Tạo cookie token
-        Cookie tokenCookie = new Cookie("token", token);
-        tokenCookie.setHttpOnly(true);
-        tokenCookie.setPath("/");
-        tokenCookie.setMaxAge(2 * 60 * 60); // 2 giờ
-
-        // ✅ Tạo cookie role
-        Cookie roleCookie = new Cookie("role", roleValue);
-        roleCookie.setPath("/");
-        roleCookie.setMaxAge(2 * 60 * 60); // 2 giờ
-
-        // ✅ Gửi cookie về client
-        response.addCookie(tokenCookie);
-        response.addCookie(roleCookie);
-
-        response.sendRedirect("http://localhost:5173/");
+        // ✅ Gửi token và role về client qua redirect URL
+        String redirectUrl = String.format("http://localhost:5173/oauth2/success?token=%s&role=%s", token, role);
+        response.sendRedirect(redirectUrl);
     }
 }
