@@ -28,6 +28,7 @@ public class ProductVariantEntity {
 
     private Integer stock;
     private BigDecimal price;
+    private String imageName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
@@ -46,4 +47,8 @@ public class ProductVariantEntity {
 
     @OneToMany(mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetailEntity> orderDetails;
+    
+    @OneToMany(mappedBy = "productVariant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductPromotionEntity> productPromotions;
+    
 }

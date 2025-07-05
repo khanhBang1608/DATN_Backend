@@ -18,6 +18,7 @@ public class PromotionsEntity {
     @Column(nullable = false, unique = true)
     private String code;
 
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "discount_amount")
