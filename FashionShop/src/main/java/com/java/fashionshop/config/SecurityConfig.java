@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.MessageDigestPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,7 +18,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.java.fashionshop.component.JwtFilter;
+import com.java.fashionshop.services.CustomOAuth2UserService;
 import com.java.fashionshop.services.CustomUserDetailsService;
+import com.java.fashionshop.component.OAuth2SuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -27,32 +28,54 @@ public class SecurityConfig {
 
     private final JwtFilter jwtRequestFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtRequestFilter, CustomUserDetailsService customUserDetailsService) {
+    public SecurityConfig(JwtFilter jwtRequestFilter,
+                          CustomUserDetailsService customUserDetailsService,
+                          OAuth2SuccessHandler oAuth2SuccessHandler) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
+    // ✅ Inject CustomOAuth2UserService qua tham số method để tránh circular dependency
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
         http.cors().and().csrf().disable()
-                .authorizeHttpRequests()
+            .authorizeHttpRequests(auth -> auth
+            		.requestMatchers(
+            			    "/",
+            			    "/api/login",
+            			    "/oauth2/**",
+            			    "/css/**",
+            			    "/js/**",
+            			    "/api/register/**",         // 👈 Đăng ký, OTP
+            			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
+            			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
+            			    "/api/products/**"          // 👈 VD thêm nếu có danh sách sản phẩm
+            			).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
-                .anyRequest().permitAll()
-                .and()
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(oAuth2SuccessHandler)
+            )
+            .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll());
+
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
-    	return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class)
                    .authenticationProvider(daoAuthenticationProvider())
                    .build();
@@ -65,16 +88,17 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // 👈 FE port
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
-        configuration.setAllowCredentials(true); // 👈 Nếu bạn dùng cookie hoặc token
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }
