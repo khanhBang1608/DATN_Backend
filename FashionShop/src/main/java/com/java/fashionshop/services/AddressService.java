@@ -23,10 +23,7 @@ public class AddressService {
     @Autowired
     private JpaUser jpaUser;
 
-    public AddressDTO createAddress(AddressBean bean) {
-        UserEntity user = jpaUser.findById(bean.getUserId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-
+    public AddressDTO createAddress(AddressBean bean, UserEntity user) {
         AddressEntity entity = new AddressEntity();
         entity.setUser(user);
         entity.setCustomerName(bean.getCustomerName());
@@ -44,6 +41,7 @@ public class AddressService {
         return convertToDTO(saved);
     }
 
+
     public List<AddressDTO> getAddressesByUserId(Integer userId) {
         return jpaAddress.findByUserUserId(userId)
                 .stream()
@@ -51,11 +49,15 @@ public class AddressService {
                 .collect(Collectors.toList());
     }
 
-    public AddressDTO updateAddress(Integer addressId, AddressBean bean) {
+    public AddressDTO updateAddress(Integer addressId, AddressBean bean, UserEntity user) {
         AddressEntity entity = jpaAddress.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ"));
 
-        // Cập nhật thông tin
+        // Đảm bảo địa chỉ này thuộc về user hiện tại
+        if (!entity.getUser().getUserId().equals(user.getUserId())) {
+            throw new RuntimeException("Không có quyền cập nhật địa chỉ này");
+        }
+
         entity.setCustomerName(bean.getCustomerName());
         entity.setPhone(bean.getPhone());
         entity.setAddress(bean.getAddress());
@@ -70,12 +72,18 @@ public class AddressService {
         return convertToDTO(saved);
     }
 
-    public void deleteAddress(Integer addressId) {
-        if (!jpaAddress.existsById(addressId)) {
-            throw new RuntimeException("Không tìm thấy địa chỉ để xóa");
+
+    public void deleteAddress(Integer addressId, UserEntity user) {
+        AddressEntity entity = jpaAddress.findById(addressId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ để xóa"));
+
+        if (!entity.getUser().getUserId().equals(user.getUserId())) {
+            throw new RuntimeException("Không có quyền xóa địa chỉ này");
         }
+
         jpaAddress.deleteById(addressId);
     }
+
 
     private AddressDTO convertToDTO(AddressEntity entity) {
         return new AddressDTO(

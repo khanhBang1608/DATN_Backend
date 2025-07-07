@@ -9,11 +9,6 @@ import lombok.Data;
 @Data
 public class AddressBean {
 
-    private Integer addressId;
-
-    @NotNull(message = "User ID không được để trống")
-    private Integer userId;
-
     @NotBlank(message = "Tên người nhận không được để trống")
     @Size(max = 100, message = "Tên người nhận không được vượt quá 100 ký tự")
     private String customerName;
