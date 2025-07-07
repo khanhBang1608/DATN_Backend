@@ -27,14 +27,13 @@ public class ManageCategoryController {
     @Autowired
     private JpaCategory categoryJPA;
 
-    // ✅ Lấy danh sách tất cả danh mục
- // Lấy tất cả danh mục
+    // Lấy tất cả danh mục
     @GetMapping
     public List<CategoryDTO> getAllCategories() {
         return categoryJPA.findAll().stream().map(category -> {
             CategoryDTO dto = new CategoryDTO();
-            dto.setCategoryId(category.getCategoryId());  
-            dto.setCategoryName(category.getCategoryName()); 
+            dto.setCategoryId(category.getCategoryId());
+            dto.setCategoryName(category.getCategoryName());
             dto.setStatus(category.isStatus());
             if (category.getParent() != null) {
                 dto.setParentId(category.getParent().getCategoryId());
@@ -43,7 +42,7 @@ public class ManageCategoryController {
         }).toList();
     }
 
-    // ✅ Lấy chi tiết danh mục theo ID
+    // Lấy chi tiết danh mục theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategoryById(@PathVariable Integer id) {
         CategoryEntity category = categoryService.getCategoryById(id);
@@ -53,7 +52,7 @@ public class ManageCategoryController {
         return ResponseEntity.ok(category);
     }
 
-    // ✅ Tạo mới danh mục
+    // Tạo mới danh mục
     @PostMapping("/create")
     public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryBean bean, BindingResult result) {
         if (result.hasErrors()) {
@@ -70,7 +69,7 @@ public class ManageCategoryController {
         }
     }
 
-    // ✅ Cập nhật danh mục
+    // Cập nhật danh mục
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateCategory(@PathVariable Integer id,
                                             @Valid @RequestBody CategoryBean bean,
