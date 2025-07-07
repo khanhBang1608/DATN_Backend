@@ -9,25 +9,29 @@ import com.java.fashionshop.bean.CategoryBean;
 import com.java.fashionshop.entity.CategoryEntity;
 import com.java.fashionshop.jpa.JpaCategory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class CategoryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CategoryService.class);
 
     @Autowired
     private JpaCategory categoryJPA;
 
     // Tạo mới danh mục
     public void createCategory(CategoryBean bean) throws IllegalArgumentException {
-        // Kiểm tra trùng tên khi tạo mới
+        logger.info("Creating category with name: '{}'", bean.getName());
         Optional<CategoryEntity> existingCategory = categoryJPA.findByCategoryName(bean.getName());
         if (existingCategory.isPresent()) {
             throw new IllegalArgumentException("Tên danh mục đã tồn tại");
         }
 
         CategoryEntity entity = new CategoryEntity();
-        entity.setCategoryName(bean.getName());
+        entity.setCategoryName(bean.getName().trim()); // Loại bỏ khoảng trắng thừa
         entity.setStatus(bean.getStatus());
 
-        // Thiết lập danh mục cha nếu có
         if (bean.getParentId() != null) {
             CategoryEntity parent = categoryJPA.findById(bean.getParentId())
                     .orElseThrow(() -> new IllegalArgumentException("Danh mục cha không tồn tại"));
@@ -39,23 +43,22 @@ public class CategoryService {
 
     // Cập nhật danh mục
     public void updateCategory(Integer id, CategoryBean bean) throws IllegalArgumentException {
+        logger.info("Updating category with id: {} and name: '{}'", id, bean.getName());
         Optional<CategoryEntity> optionalCategory = categoryJPA.findById(id);
 
         if (optionalCategory.isEmpty()) {
             throw new IllegalArgumentException("Danh mục không tồn tại");
         }
 
-        // Kiểm tra tên có bị trùng với danh mục khác không
         Optional<CategoryEntity> categoryByName = categoryJPA.findByCategoryName(bean.getName());
         if (categoryByName.isPresent() && !categoryByName.get().getCategoryId().equals(id)) {
             throw new IllegalArgumentException("Tên danh mục đã tồn tại");
         }
 
         CategoryEntity entity = optionalCategory.get();
-        entity.setCategoryName(bean.getName());
+        entity.setCategoryName(bean.getName().trim()); // Loại bỏ khoảng trắng thừa
         entity.setStatus(bean.getStatus());
 
-        // Cập nhật danh mục cha
         if (bean.getParentId() != null) {
             if (bean.getParentId().equals(id)) {
                 throw new IllegalArgumentException("Không thể chọn chính nó làm danh mục cha");
@@ -64,7 +67,7 @@ public class CategoryService {
                     .orElseThrow(() -> new IllegalArgumentException("Danh mục cha không tồn tại"));
             entity.setParent(parent);
         } else {
-            entity.setParent(null); // Xóa danh mục cha nếu không chọn
+            entity.setParent(null);
         }
 
         categoryJPA.save(entity);
