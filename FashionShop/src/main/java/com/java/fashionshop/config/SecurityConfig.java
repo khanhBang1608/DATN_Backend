@@ -20,7 +20,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.java.fashionshop.component.JwtFilter;
 import com.java.fashionshop.services.CustomOAuth2UserService;
 import com.java.fashionshop.services.CustomUserDetailsService;
-import com.java.fashionshop.component.OAuth2SuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -28,14 +27,11 @@ public class SecurityConfig {
 
     private final JwtFilter jwtRequestFilter;
     private final CustomUserDetailsService customUserDetailsService;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     public SecurityConfig(JwtFilter jwtRequestFilter,
-                          CustomUserDetailsService customUserDetailsService,
-                          OAuth2SuccessHandler oAuth2SuccessHandler) {
+            CustomUserDetailsService customUserDetailsService) {
         this.jwtRequestFilter = jwtRequestFilter;
         this.customUserDetailsService = customUserDetailsService;
-        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
     // ✅ Inject CustomOAuth2UserService qua tham số method để tránh circular dependency
@@ -46,7 +42,6 @@ public class SecurityConfig {
             		.requestMatchers(
             			    "/",
             			    "/api/login",
-            			    "/oauth2/**",
             			    "/css/**",
             			    "/js/**",
             			    "/api/register/**",         // 👈 Đăng ký, OTP
@@ -59,10 +54,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                .successHandler(oAuth2SuccessHandler)
             )
             .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll());
 
