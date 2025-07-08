@@ -1,4 +1,4 @@
-package com.java.fashionshop.contrtoller;
+package com.java.fashionshop.controller;
 
 import java.io.File;
 import java.io.IOException;

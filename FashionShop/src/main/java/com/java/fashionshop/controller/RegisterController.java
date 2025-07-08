@@ -1,4 +1,4 @@
-package com.java.fashionshop.contrtoller;
+package com.java.fashionshop.controller;
 
 import java.util.HashMap;
 import java.util.Map;

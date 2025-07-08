@@ -18,5 +18,6 @@ public class ProductVariantBean {
     private String sizeName;
     private BigDecimal price;
     private Integer stock;
+    private String imageName;
 }
 

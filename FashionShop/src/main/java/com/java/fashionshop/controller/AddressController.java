@@ -1,4 +1,4 @@
-package com.java.fashionshop.contrtoller;
+package com.java.fashionshop.controller;
 
 import com.java.fashionshop.bean.AddressBean;
 import com.java.fashionshop.component.JwtUtil;

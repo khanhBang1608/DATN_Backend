@@ -1,4 +1,4 @@
-package com.java.fashionshop.contrtoller;
+package com.java.fashionshop.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

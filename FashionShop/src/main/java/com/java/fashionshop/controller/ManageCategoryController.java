@@ -1,4 +1,4 @@
-package com.java.fashionshop.contrtoller;
+package com.java.fashionshop.controller;
 
 import java.util.List;
 import java.util.stream.Collectors;
