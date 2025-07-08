@@ -52,7 +52,8 @@ public class SecurityConfig {
             			    "/api/register/**",         // 👈 Đăng ký, OTP
             			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
-            			    "/api/products/**"          // 👈 VD thêm nếu có danh sách sản phẩm
+            			    "/api/products/**",
+                            "/api/cart/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")

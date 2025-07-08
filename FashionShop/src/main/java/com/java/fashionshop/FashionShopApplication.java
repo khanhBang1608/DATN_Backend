@@ -1,5 +1,7 @@
 package com.java.fashionshop;
 
+import com.java.fashionshop.component.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,8 +15,19 @@ import com.java.fashionshop.jpa.JpaColors;
 import com.java.fashionshop.jpa.JpaSizes;
 
 @SpringBootApplication
-public class FashionShopApplication {
+public class FashionShopApplication implements CommandLineRunner {
+	@Autowired
+	private final JwtUtil jwtUtil;
 
+	public FashionShopApplication(JwtUtil jwtUtil) {
+		this.jwtUtil = jwtUtil;
+	}
+
+	@Override
+	public void run(String... args) {
+		String token = jwtUtil.generateToken("huythai@gmail.com", "USER");
+		System.out.println("Generated token: " + token);
+	}
 	public static void main(String[] args) {
 		SpringApplication.run(FashionShopApplication.class, args);
 	}
