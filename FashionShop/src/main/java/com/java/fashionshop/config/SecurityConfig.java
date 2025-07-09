@@ -50,8 +50,8 @@ public class SecurityConfig {
             			    "/api/products/**",
             			    "/api/user/**",
             			    "/api/admin/**",
-            			    "/images/**"
-            			    
+            			    "/images/**",
+                            "/api/cart/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
             	.requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

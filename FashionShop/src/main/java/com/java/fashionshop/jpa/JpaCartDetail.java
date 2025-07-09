@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.java.fashionshop.entity.CartDetailEntity;
 
-public interface JpaCartDetail extends JpaRepository<CartDetailEntity, Integer> {
+import java.util.Optional;
 
+public interface JpaCartDetail extends JpaRepository<CartDetailEntity, Integer> {
+    Optional<CartDetailEntity> findByCartCartIdAndProductVariantProductVariantId(Integer cartId, Integer productVariantId);
 }
