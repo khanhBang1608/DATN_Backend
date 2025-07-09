@@ -17,7 +17,7 @@ import com.java.fashionshop.services.UserService;
 @RestController
 @RequestMapping("/api/admin/users")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
-public class UserController {
+public class ManageUserController {
 
     @Autowired
     private UserService userService;
