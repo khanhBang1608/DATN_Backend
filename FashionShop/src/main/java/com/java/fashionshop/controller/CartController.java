@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 // Controller
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping("/api/user/cart")
 class CartController {
     @Autowired
     private CartService cartService;

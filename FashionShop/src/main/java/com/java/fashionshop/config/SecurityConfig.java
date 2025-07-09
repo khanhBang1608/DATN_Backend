@@ -48,10 +48,7 @@ public class SecurityConfig {
             			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
             			    "/api/products/**",
-            			    "/api/user/**",
-            			    "/api/admin/**",
-            			    "/images/**",
-                            "/api/cart/**"// 👈 VD thêm nếu có danh sách sản phẩm
+            			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
             	.requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
