@@ -49,8 +49,11 @@ public class SecurityConfig {
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
             			    "/api/products/**",
             			    "/api/user/**",
-            			    "/uploads/**"
+            			    "/api/admin/**",
+            			    "/images/**"
+            			    
             			).permitAll()
+            	.requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()

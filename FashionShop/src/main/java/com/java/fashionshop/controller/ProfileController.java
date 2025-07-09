@@ -16,7 +16,6 @@ import com.java.fashionshop.dto.UserDTO;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.services.UserService;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -24,7 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class ProfileController {
 
-	private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/images/";
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -51,7 +50,8 @@ public class ProfileController {
                 user.getEmail(),
                 user.getAvatar(),
                 user.getStatus(),
-                user.getRole()
+                user.getRole(),
+                user.getDateCreated()
         ));
     }
 
@@ -72,17 +72,25 @@ public class ProfileController {
             user.setFullName(fullName);
 
             if (avatar != null && !avatar.isEmpty()) {
-                String fileName = UUID.randomUUID().toString() + "_" + StringUtils.cleanPath(avatar.getOriginalFilename());
-
+                // Tạo thư mục nếu chưa tồn tại
                 File uploadDir = new File(UPLOAD_DIR);
                 if (!uploadDir.exists()) uploadDir.mkdirs();
 
+                // Xóa avatar cũ (nếu là file local, không phải URL từ Google)
+                if (user.getAvatar() != null && user.getAvatar().contains("/images/")) {
+                    String oldFileName = user.getAvatar().substring(user.getAvatar().lastIndexOf("/") + 1);
+                    File oldFile = new File(UPLOAD_DIR + oldFileName);
+                    if (oldFile.exists()) oldFile.delete();
+                }
+
+                // Lưu ảnh mới
+                String fileName = UUID.randomUUID().toString() + "_" + StringUtils.cleanPath(avatar.getOriginalFilename());
                 File destFile = new File(UPLOAD_DIR + fileName);
                 avatar.transferTo(destFile);
 
-                // ✅ Trả về đường dẫn đầy đủ cho frontend
+                // Trả về đường dẫn đầy đủ cho frontend
                 String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-                String avatarUrl = baseUrl + "/uploads/" + fileName;
+                String avatarUrl = baseUrl + "/images/" + fileName;
 
                 user.setAvatar(avatarUrl);
             }
@@ -95,13 +103,13 @@ public class ProfileController {
                     user.getEmail(),
                     user.getAvatar(),
                     user.getStatus(),
-                    user.getRole()
+                    user.getRole(),
+                    user.getDateCreated()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Cập nhật thất bại: " + e.getMessage());
         }
     }
-
 
     private String extractEmailFromRequest(HttpServletRequest request) {
         String header = request.getHeader("Authorization");

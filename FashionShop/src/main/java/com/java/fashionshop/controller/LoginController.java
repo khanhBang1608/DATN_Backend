@@ -54,7 +54,7 @@ public class LoginController {
 				String token = jwtUtil.generateToken(email, role);
 
 				UserDTO userDTO = new UserDTO(user.getUserId(), user.getFullName(), user.getEmail(), user.getAvatar(),
-						user.getStatus(), user.getRole());
+						user.getStatus(), user.getRole(), user.getDateCreated());
 
 				Cookie cookie = new Cookie("token", token);
 				cookie.setHttpOnly(true);

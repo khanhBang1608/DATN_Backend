@@ -1,5 +1,9 @@
 package com.java.fashionshop.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -12,4 +16,7 @@ public class UserDTO {
     private String avatar;
     private boolean status;
     private Integer role;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDateTime createdAt;
 }
