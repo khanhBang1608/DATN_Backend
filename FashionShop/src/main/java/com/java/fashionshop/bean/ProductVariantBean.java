@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+import org.springframework.web.multipart.MultipartFile;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,6 +20,6 @@ public class ProductVariantBean {
     private String sizeName;
     private BigDecimal price;
     private Integer stock;
-    private String imageName;
+    private MultipartFile image;
 }
 
