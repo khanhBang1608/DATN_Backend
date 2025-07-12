@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -97,12 +98,9 @@ public class ManageProductController {
 	}
 	
 	@PostMapping("/product-variants")
-	public ResponseEntity<?> addProductVariant(
-	        @RequestPart("variant") ProductVariantBean bean,
-	        @RequestPart(value = "file", required = false) MultipartFile file
-	) {
+	public ResponseEntity<?> addProductVariant(@ModelAttribute ProductVariantBean bean) {
 	    try {
-	        ProductVariantEntity saved = productVariantService.save(bean, file);
+	        ProductVariantEntity saved = productVariantService.save(bean);
 	        return ResponseEntity.ok(convertToDTO(saved));
 	    } catch (IllegalArgumentException e) {
 	        return ResponseEntity.badRequest().body(e.getMessage());
@@ -111,14 +109,14 @@ public class ManageProductController {
 	    }
 	}
 
+
 	@PutMapping("/product-variants/{id}")
 	public ResponseEntity<?> updateProductVariant(
 	        @PathVariable Integer id,
-	        @RequestPart("variant") ProductVariantBean bean,
-	        @RequestPart(value = "file", required = false) MultipartFile file
+	        @ModelAttribute ProductVariantBean bean
 	) {
 	    try {
-	        ProductVariantEntity updated = productVariantService.update(id, bean, file);
+	        ProductVariantEntity updated = productVariantService.update(id, bean);
 	        return ResponseEntity.ok(convertToDTO(updated));
 	    } catch (IllegalArgumentException e) {
 	        return ResponseEntity.badRequest().body(e.getMessage());
@@ -126,6 +124,7 @@ public class ManageProductController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
 	    }
 	}
+
 
 	private ProductDTO convertToDTO(ProductEntity product) {
 	    ProductDTO dto = new ProductDTO();

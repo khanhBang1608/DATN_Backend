@@ -1,6 +1,7 @@
 package com.java.fashionshop.services;
 
 import com.java.fashionshop.bean.ProductBean;
+import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.entity.CategoryEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.jpa.JpaCategory;
@@ -95,6 +96,31 @@ public class ProductService {
         entity.setCategory(category);
 
         return jpaProduct.save(entity);
+    }
+    
+    public List<ProductEntity> getAllEntity() {
+        return jpaProduct.findAll();
+    }
+
+    public ProductEntity findEntityById(Integer id) {
+        return jpaProduct.findById(id).orElse(null);
+    }
+
+    
+    public ProductDTO convertToDTO(ProductEntity product) {
+        ProductDTO dto = new ProductDTO();
+        dto.setProductId(product.getProductId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setStatus(product.getStatus());
+        dto.setDateCreated(product.getDateCreated());
+
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+        }
+
+        return dto;
     }
 
 }
