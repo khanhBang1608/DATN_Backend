@@ -2,7 +2,6 @@ package com.java.fashionshop.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,23 +12,35 @@ public class DiscountEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Column(name = "discount_id")
+    private Integer discountId;
 
-    @Column(nullable = false, unique = true)
-    private String code;
+    @Column(name = "discount_code", nullable = false, unique = true)
+    private String discountCode;
 
-    @Column(nullable = false)
-    private Double percentage;
-    
     @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
+    @Column(name = "discount_percent", nullable = false)
+    private Double discountPercent;
+
+    @Column(name = "min_order_amount")
+    private Double minOrderAmount;
+
+    @Column(name = "max_discount_amount") 
+    private Double maxDiscountAmount;
+
+    @Column(name = "quantity_limit")
+    private Integer quantityLimit;
+
+    @Column(name = "start_date")
     private LocalDateTime startDate;
 
+    @Column(name = "end_date")
     private LocalDateTime endDate;
 
     private Boolean status;
 
-     @OneToMany(mappedBy = "discount")
-     private List<OrderEntity> orders;
+    @OneToMany(mappedBy = "discount")
+    private List<OrderEntity> orders;
 }
