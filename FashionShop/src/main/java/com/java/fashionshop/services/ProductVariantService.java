@@ -150,6 +150,19 @@ public class ProductVariantService {
     public ProductVariantEntity findEntityById(Integer id) {
         return jpaProductVariant.findById(id).orElse(null);
     }
+    
+    public ProductVariantEntity findByProductIdAndColorAndSize(Integer productId, Integer colorId, Integer sizeId) {
+        return jpaProductVariant.findAll().stream()
+                .filter(variant ->
+                        variant.getProduct().getProductId().equals(productId) &&
+                        variant.getColor().getColorId().equals(colorId) &&
+                        ((sizeId == null && variant.getSize() == null) || 
+                         (variant.getSize() != null && variant.getSize().getSizeId().equals(sizeId)))
+                )
+                .findFirst()
+                .orElse(null);
+    }
+
 
     public void validateInput(ProductVariantBean bean) {
         if (bean.getProductId() == null) {
