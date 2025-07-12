@@ -33,8 +33,7 @@ public class ManagePromotionController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody PromotionBean bean,
-                                    org.springframework.validation.BindingResult result) {
+    public ResponseEntity<?> create(@Valid @RequestBody PromotionBean bean, BindingResult result) {
         // Kiểm tra lỗi validation từ @Valid
         if (result.hasErrors()) {
             List<String> errors = result.getFieldErrors().stream()
