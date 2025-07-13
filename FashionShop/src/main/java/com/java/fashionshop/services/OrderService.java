@@ -1,5 +1,9 @@
 package com.java.fashionshop.services;
 
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderDetailDTO;
 import com.java.fashionshop.entity.OrderEntity;
@@ -17,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -201,11 +206,35 @@ public class OrderService {
                 order.getPaymentMethod(),
                 order.getPaymentStatus(),
                 order.getUser().getUserId(),
-                order.getDiscount() != null ? order.getDiscount().getId() : null,
+                order.getDiscount() != null ? order.getDiscount().getDiscountId() : null,
                 detailDTOs,
                 order.getUser().getFullName()
 
 
         );
+    }
+
+
+    public byte[] exportInvoicePdf(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(outputStream);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        document.add(new Paragraph("HÓA ĐƠN ĐƠN HÀNG #" + order.getOrderId()));
+        document.add(new Paragraph("Tên khách hàng: " + order.getUser().getFullName()));
+        document.add(new Paragraph("Địa chỉ: " + order.getAddress()));
+        document.add(new Paragraph("Tổng tiền: " + order.getTotalAmount() + " VND"));
+
+        for (OrderDetailEntity detail : order.getOrderDetails()) {
+            document.add(new Paragraph("- " + detail.getProductVariant().getProduct().getName() +
+                    " x" + detail.getQuantity() + " = " + detail.getPrice() + " VND"));
+        }
+
+        document.close();
+        return outputStream.toByteArray();
     }
 }

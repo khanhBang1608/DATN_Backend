@@ -3,7 +3,7 @@ package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,4 +45,19 @@ public class ManageOrderController {
         orderService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{orderId}/invoice")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Integer orderId) {
+        byte[] pdfBytes = orderService.exportInvoicePdf(orderId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("HoaDon-" + orderId + ".pdf")
+                .build());
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
 }
