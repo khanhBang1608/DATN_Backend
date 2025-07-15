@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.java.fashionshop.bean.RegisterBean;
-import com.java.fashionshop.config.SecurityConfig;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.jpa.JpaUser;
 
@@ -68,12 +67,13 @@ public class UserService {
     }
 
     public UserEntity findUserByEmail(String email) {
-        return userJPA.findByEmail(email).orElse(null);
+        Optional<UserEntity> userOpt = userJPA.findByEmail(email);
+        return userOpt.orElse(null); // Trả về null nếu không có
     }
-
     // Xóa user theo ID
     public void deleteById(Integer id) {
         userJPA.deleteById(id);
+        
     }
 
     // Lấy tất cả người dùng (trừ role = 0)

@@ -44,6 +44,9 @@ public class SecurityConfig {
             			    "/api/login",
             			    "/css/**",
             			    "/js/**",
+            			    "/api/forgot-password",         // 👈 THÊM DÒNG NÀY
+            		        "/api/verify-otp",              // 👈 THÊM DÒNG NÀY
+            		        "/api/reset-password",          // 👈 THÊM DÒNG NÀY
             			    "/api/register/**",         // 👈 Đăng ký, OTP
             			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
