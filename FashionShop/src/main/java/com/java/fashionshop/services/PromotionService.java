@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.java.fashionshop.bean.PromotionBean;
+import com.java.fashionshop.dto.ProductPromotionDTO;
 import com.java.fashionshop.dto.PromotionDTO;
 import com.java.fashionshop.entity.PromotionsEntity;
 import com.java.fashionshop.jpa.JpaPromotions;
@@ -18,7 +19,9 @@ public class PromotionService {
     private JpaPromotions promotionRepo;
 
     public List<PromotionDTO> findAll() {
-        return promotionRepo.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+        return promotionRepo.findAll().stream()
+            .map(this::convertToDTO) // <-- Có khả năng lỗi ở đây
+            .collect(Collectors.toList());
     }
 
     public PromotionDTO findById(Integer id) {
@@ -55,7 +58,7 @@ public class PromotionService {
         promotionRepo.deleteById(id);
     }
 
-    private PromotionDTO convertToDTO(PromotionsEntity entity) {
+    public PromotionDTO convertToDTO(PromotionsEntity entity) {
         PromotionDTO dto = new PromotionDTO();
         dto.setId(entity.getId());
         dto.setCode(entity.getCode());
@@ -64,6 +67,16 @@ public class PromotionService {
         dto.setStartDate(entity.getStartDate());
         dto.setEndDate(entity.getEndDate());
         dto.setStatus(entity.getStatus());
+
+        List<ProductPromotionDTO> productDTOs = entity.getProductPromotions().stream().map(p -> {
+            ProductPromotionDTO pd = new ProductPromotionDTO();
+            pd.setId(p.getId());
+            pd.setQuantityLimit(p.getQuantityLimit());
+            pd.setProductVariantId(p.getProductVariant().getProductVariantId());
+            return pd;
+        }).collect(Collectors.toList());
+
+        dto.setProductPromotions(productDTOs);
         return dto;
     }
 }
