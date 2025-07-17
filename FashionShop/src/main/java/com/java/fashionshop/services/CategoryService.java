@@ -77,4 +77,5 @@ public class CategoryService {
     public CategoryEntity getCategoryById(Integer id) {
         return categoryJPA.findById(id).orElse(null);
     }
+    
 }
