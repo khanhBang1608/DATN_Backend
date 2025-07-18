@@ -126,17 +126,44 @@ public class ManageProductController {
 	}
 
 
-	private ProductDTO convertToDTO(ProductEntity product) {
-	    ProductDTO dto = new ProductDTO();
-	    dto.setProductId(product.getProductId());
-	    dto.setName(product.getName());
-	    dto.setStatus(product.getStatus());
-	    dto.setDateCreated(product.getDateCreated());
-	    dto.setDescription(product.getDescription());
-	    dto.setCategoryId(product.getCategory().getCategoryId());
-	    dto.setCategoryName(product.getCategory().getCategoryName());
-	    return dto;
-	}
+	public ProductDTO convertToDTO(ProductEntity product) {
+        ProductDTO dto = new ProductDTO();
+        dto.setProductId(product.getProductId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setStatus(product.getStatus());
+        dto.setDateCreated(product.getDateCreated());
+
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+        }
+
+        // ✅ Convert danh sách biến thể
+        List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+            ProductVariantDTO variantDTO = new ProductVariantDTO();
+            variantDTO.setProductVariantId(variant.getProductVariantId());
+            variantDTO.setStock(variant.getStock());
+            variantDTO.setPrice(variant.getPrice());
+            variantDTO.setImageName(variant.getImageName());
+
+            if (variant.getColor() != null) {
+                variantDTO.setColorId(variant.getColor().getColorId());
+                variantDTO.setColorName(variant.getColor().getColorName());
+            }
+
+            if (variant.getSize() != null) {
+                variantDTO.setSizeId(variant.getSize().getSizeId());
+                variantDTO.setSizeName(variant.getSize().getSizeName());
+            }
+
+            return variantDTO;
+        }).toList();
+
+        dto.setVariants(variantDTOs);
+
+        return dto;
+    }
 	
 	private ProductVariantDTO convertToDTO(ProductVariantEntity variant) {
 	    ProductVariantDTO dto = new ProductVariantDTO();
