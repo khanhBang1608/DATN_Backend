@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -48,8 +49,11 @@ public class SecurityConfig {
             			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
             			    "/api/products/**",
+                            "/api/user/cart/**",
+                            "/api/user/reviews/**",
             			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
             	.requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")

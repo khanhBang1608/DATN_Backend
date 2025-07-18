@@ -2,6 +2,7 @@ package com.java.fashionshop.services;
 
 import com.java.fashionshop.bean.ProductBean;
 import com.java.fashionshop.dto.ProductDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.CategoryEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.jpa.JpaCategory;
@@ -120,7 +121,29 @@ public class ProductService {
             dto.setCategoryName(product.getCategory().getCategoryName());
         }
 
+        // ✅ Convert danh sách biến thể
+        List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+            ProductVariantDTO variantDTO = new ProductVariantDTO();
+            variantDTO.setProductVariantId(variant.getProductVariantId());
+            variantDTO.setStock(variant.getStock());
+            variantDTO.setPrice(variant.getPrice());
+            variantDTO.setImageName(variant.getImageName());
+
+            if (variant.getColor() != null) {
+                variantDTO.setColorId(variant.getColor().getColorId());
+                variantDTO.setColorName(variant.getColor().getColorName());
+            }
+
+            if (variant.getSize() != null) {
+                variantDTO.setSizeId(variant.getSize().getSizeId());
+                variantDTO.setSizeName(variant.getSize().getSizeName());
+            }
+
+            return variantDTO;
+        }).toList();
+
+        dto.setVariants(variantDTOs);
+
         return dto;
     }
-
 }

@@ -18,27 +18,27 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "order_detail")
-public class OrderDetailEntity {
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer orderDetailId;
+    @Entity
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Table(name = "order_detail")
+    public class OrderDetailEntity {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Integer orderDetailId;
 
-    private Integer quantity;
-    private BigDecimal price;
+        private Integer quantity;
+        private BigDecimal price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private OrderEntity order;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "order_id", nullable = false)
+        private OrderEntity order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_variant_id", nullable = false)
-    private ProductVariantEntity productVariant;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "product_variant_id", nullable = false)
+        private ProductVariantEntity productVariant;
 
-    @OneToOne(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
-    private ReviewEntity review;
-}
+        @OneToOne(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+        private ReviewEntity review;
+    }
