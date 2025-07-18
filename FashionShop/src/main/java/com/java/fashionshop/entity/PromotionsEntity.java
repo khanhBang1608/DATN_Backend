@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 @Table(name = "promotions")
@@ -33,7 +33,7 @@ public class PromotionsEntity {
     private Boolean status;
 
     @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ProductPromotionEntity> productPromotions;
+    private List<ProductPromotionEntity> productPromotions;
 
 }
 

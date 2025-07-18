@@ -29,7 +29,6 @@ public class PromotionClientController {
 
     @Autowired
     private JpaPromotions promotionRepo;
-
     /**
      * Lấy danh sách khuyến mãi đang diễn ra (có status = true và nằm trong thời gian hợp lệ)
      */
@@ -43,7 +42,6 @@ public class PromotionClientController {
         	    .collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
-
     /**
      * Lấy chi tiết khuyến mãi theo ID, bao gồm các sản phẩm áp dụng
      */

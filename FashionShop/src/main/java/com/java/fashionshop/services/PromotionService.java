@@ -20,8 +20,12 @@ public class PromotionService {
 
     public List<PromotionDTO> findAll() {
         return promotionRepo.findAll().stream()
-            .map(this::convertToDTO) // <-- Có khả năng lỗi ở đây
+            .map(this::convertToDTO)
             .collect(Collectors.toList());
+    }
+    
+    public List<PromotionsEntity> findAlll() {
+        return promotionRepo.findAll();
     }
 
     public PromotionDTO findById(Integer id) {
@@ -68,15 +72,19 @@ public class PromotionService {
         dto.setEndDate(entity.getEndDate());
         dto.setStatus(entity.getStatus());
 
-        List<ProductPromotionDTO> productDTOs = entity.getProductPromotions().stream().map(p -> {
-            ProductPromotionDTO pd = new ProductPromotionDTO();
-            pd.setId(p.getId());
-            pd.setQuantityLimit(p.getQuantityLimit());
-            pd.setProductVariantId(p.getProductVariant().getProductVariantId());
-            return pd;
-        }).collect(Collectors.toList());
+        List<ProductPromotionDTO> productDTOs = (entity.getProductPromotions() != null)
+        	    ? entity.getProductPromotions().stream().map(p -> {
+        	        ProductPromotionDTO pd = new ProductPromotionDTO();
+        	        pd.setId(p.getId());
+        	        pd.setQuantityLimit(p.getQuantityLimit());
+        	        if (p.getProductVariant() != null) {
+        	            pd.setProductVariantId(p.getProductVariant().getProductVariantId());
+        	        }
+        	        return pd;
+        	    }).collect(Collectors.toList())
+        	    : List.of();
 
-        dto.setProductPromotions(productDTOs);
+        	dto.setProductPromotions(productDTOs);
         return dto;
     }
 }

@@ -1,5 +1,7 @@
 package com.java.fashionshop.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -23,6 +25,7 @@ public class ProductPromotionEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotions_id", nullable = false)
+    @JsonIgnore
     private PromotionsEntity promotion;
 
     @ManyToOne(fetch = FetchType.LAZY)
