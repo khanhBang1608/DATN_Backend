@@ -6,6 +6,7 @@ import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.services.ProductViewsService;
 import com.java.fashionshop.services.UserService;
 import com.java.fashionshop.component.JwtUtil;
+import com.java.fashionshop.dto.ProductViewDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -51,9 +52,9 @@ public class ProductViewsController {
 
     // 2. Lấy sản phẩm đã xem gần đây
     @GetMapping("/product-views/recent")
-    public List<ProductViewsEntity> getRecentViews(HttpServletRequest request) {
+    public List<ProductViewDTO> getRecentViews(HttpServletRequest request) {
         Integer userId = extractUserIdFromRequest(request);
-        return (userId != null) ? productViewsService.getRecentViews(userId) : List.of();
+        return (userId != null) ? productViewsService.getRecentViewDTOs(userId) : List.of();
     }
 
     // 3. Top sản phẩm xem nhiều nhất (không cần token)

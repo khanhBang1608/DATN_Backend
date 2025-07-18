@@ -59,7 +59,7 @@ public class UserEntity {
     private List<ReviewEntity> reviews;
     
     @OneToMany(mappedBy = "user")
-    private Set<ProductViewsEntity> productViews;
+    private List<ProductViewsEntity> productViews;
 
 }
 
