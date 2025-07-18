@@ -68,15 +68,11 @@ public class ProductPromotionService {
         productPromotionRepo.deleteById(id);
     }
 
-    private ProductPromotionDTO convertToDTO(ProductPromotionEntity entity) {
+    public ProductPromotionDTO convertToDTO(ProductPromotionEntity entity) {
         ProductPromotionDTO dto = new ProductPromotionDTO();
         dto.setId(entity.getId());
         dto.setQuantityLimit(entity.getQuantityLimit());
         dto.setProductVariantId(entity.getProductVariant().getProductVariantId());
-        dto.setProductVariantName(entity.getProductVariant().getProduct().getName()); // giả sử có getName()
-        dto.setColor(entity.getProductVariant().getColor().getColorName());
-        dto.setSize(entity.getProductVariant().getSize().getSizeName());
         return dto;
     }
-    
 }
