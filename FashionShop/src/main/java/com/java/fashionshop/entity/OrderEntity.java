@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -54,7 +55,7 @@ public class OrderEntity {
 	private DiscountEntity discount;
 
 	// Quan hệ với OrderDetail
-	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-	private List<OrderDetailEntity> orderDetails;
+	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<OrderDetailEntity> orderDetails = new ArrayList<>();
 	
 }
