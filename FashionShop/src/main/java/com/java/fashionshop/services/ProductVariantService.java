@@ -108,24 +108,32 @@ public class ProductVariantService {
         ProductVariantEntity entity = jpaProductVariant.findById(variantId)
                 .orElseThrow(() -> new IllegalArgumentException("Biến thể sản phẩm không tồn tại."));
 
+        // Giữ nguyên color & size nếu không có thay đổi
+        if (bean.getColorId() != null) {
+            entity.setColor(jpaColor.findById(bean.getColorId())
+                    .orElseThrow(() -> new IllegalArgumentException("Màu sắc không tồn tại.")));
+        }
+
+        if (bean.getSizeId() != null) {
+            entity.setSize(jpaSize.findById(bean.getSizeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Size không tồn tại.")));
+        }
+
         entity.setPrice(bean.getPrice());
         entity.setStock(bean.getStock());
 
-        // Xử lý ảnh
         MultipartFile file = bean.getImage();
         if (file != null && !file.isEmpty()) {
-            // Nếu có ảnh cũ thì xóa
+            // Xóa ảnh cũ nếu có
             if (entity.getImageName() != null && !entity.getImageName().isEmpty()) {
                 Path oldImagePath = Paths.get(IMAGE_DIR, entity.getImageName());
                 try {
                     Files.deleteIfExists(oldImagePath);
                 } catch (IOException e) {
                     System.err.println("Không thể xóa ảnh cũ: " + e.getMessage());
-                    // Không throw lỗi để vẫn tiếp tục cập nhật ảnh mới
                 }
             }
 
-            // Lưu ảnh mới
             try {
                 String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
                 Path newPath = Paths.get(IMAGE_DIR, fileName);
@@ -136,15 +144,31 @@ public class ProductVariantService {
                 throw new RuntimeException("Không thể lưu ảnh mới: " + e.getMessage());
             }
         }
-        // Nếu không chọn ảnh mới thì giữ nguyên ảnh cũ (không thay đổi gì)
 
         return jpaProductVariant.save(entity);
     }
 
+    
+    public void deleteById(Integer id) {
+        ProductVariantEntity entity = jpaProductVariant.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Biến thể không tồn tại"));
+
+        // Xóa ảnh nếu có
+        if (entity.getImageName() != null && !entity.getImageName().isEmpty()) {
+            Path imagePath = Paths.get(IMAGE_DIR, entity.getImageName());
+            try {
+                Files.deleteIfExists(imagePath);
+            } catch (IOException e) {
+                System.err.println("Không thể xóa ảnh: " + e.getMessage());
+            }
+        }
+
+        jpaProductVariant.deleteById(id);
+    }
+
+
     public List<ProductVariantEntity> findEntityByProductId(Integer productId) {
-        return jpaProductVariant.findAll().stream()
-                .filter(variant -> variant.getProduct().getProductId().equals(productId))
-                .collect(Collectors.toList());
+        return jpaProductVariant.findByProduct_ProductId(productId);
     }
 
     public ProductVariantEntity findEntityById(Integer id) {
@@ -185,10 +209,6 @@ public class ProductVariantService {
             throw new IllegalArgumentException("Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
         }
 
-        if (!jpaProduct.existsById(bean.getProductId())) {
-            throw new IllegalArgumentException("Sản phẩm không tồn tại.");
-        }
-
         if (!jpaColor.existsById(bean.getColorId())) {
             throw new IllegalArgumentException("Màu sắc không tồn tại.");
         }
@@ -197,8 +217,26 @@ public class ProductVariantService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Vui lòng chọn ảnh.");
         }
-        if(file.getSize() > 1) {
-        	throw new IllegalArgumentException("Chi duoc them 1 anh");
+    }
+
+    public void validateUpdateInput(ProductVariantBean bean, ProductVariantEntity existingVariant) {
+        if (bean.getPrice() == null || bean.getPrice().signum() <= 0) {
+            throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0.");
+        }
+
+        if (bean.getStock() == null || bean.getStock() < 0) {
+            throw new IllegalArgumentException("Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
+        }
+
+        // Không cho phép thay đổi màu và size khi update
+        if (!bean.getColorId().equals(existingVariant.getColor().getColorId())) {
+            throw new IllegalArgumentException("Không được phép thay đổi màu sản phẩm.");
+        }
+
+        if (!bean.getSizeId().equals(existingVariant.getSize().getSizeId())) {
+            throw new IllegalArgumentException("Không được phép thay đổi size sản phẩm.");
         }
     }
+
+
 }

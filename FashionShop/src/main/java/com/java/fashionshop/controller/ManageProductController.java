@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,9 +22,14 @@ import com.java.fashionshop.bean.ProductBean;
 import com.java.fashionshop.bean.ProductVariantBean;
 import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.entity.SizesEntity;
+import com.java.fashionshop.jpa.JpaColors;
 import com.java.fashionshop.jpa.JpaProduct;
+import com.java.fashionshop.jpa.JpaProductVariant;
+import com.java.fashionshop.jpa.JpaSizes;
 import com.java.fashionshop.services.CategoryService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
@@ -44,6 +50,24 @@ public class ManageProductController {
 	 
 	 @Autowired
 	 private ProductVariantService productVariantService;
+	 
+	 @Autowired
+	 private JpaColors jpaColors;
+
+	 @Autowired
+	 private JpaSizes jpaSizes;
+	 @Autowired
+	 private JpaProductVariant jpaProductVariant;
+	 
+	 @GetMapping("/colors")
+	 public ResponseEntity<List<ColorsEntity>> getAllColors() {
+	     return ResponseEntity.ok(jpaColors.findAll());
+	 }
+
+	 @GetMapping("/sizes")
+	 public ResponseEntity<List<SizesEntity>> getAllSizes() {
+	     return ResponseEntity.ok(jpaSizes.findAll());
+	 }
 
 	
 	 @GetMapping("/products")
@@ -119,21 +143,42 @@ public class ManageProductController {
 	}
 
 
-	@PutMapping("/product-variants/{id}")
-	public ResponseEntity<?> updateProductVariant(
-	        @PathVariable Integer id,
-	        @ModelAttribute ProductVariantBean bean
-	) {
+	@PutMapping("/product-variants/update/{variantId}")
+	public ResponseEntity<?> updateVariant(
+	        @PathVariable Integer variantId,
+	        @ModelAttribute ProductVariantBean bean) {
+
 	    try {
-	        ProductVariantEntity updated = productVariantService.update(id, bean);
-	        return ResponseEntity.ok(convertToDTO(updated));
+	    	ProductVariantEntity existing = jpaProductVariant.findById(bean.getVariantId())
+	    		    .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+	        // Nếu tách riêng hàm validate thì dùng hàm này
+	        productVariantService.validateUpdateInput(bean,existing);
+
+	        // Gọi service update
+	        ProductVariantEntity updated = productVariantService.update(variantId, bean);
+
+	        return ResponseEntity.ok("Cập nhật biến thể thành công.");
 	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu: " + e.getMessage());
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Lỗi hệ thống: " + e.getMessage());
+	    }
+	}
+
+	
+	@DeleteMapping("/product-variants/{id}")
+	public ResponseEntity<?> deleteProductVariant(@PathVariable Integer id) {
+	    try {
+	        productVariantService.deleteById(id);
+	        return ResponseEntity.ok("Đã xóa thành công");
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 	    } catch (Exception e) {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
 	    }
 	}
-
 
 	public ProductDTO convertToDTO(ProductEntity product) {
         ProductDTO dto = new ProductDTO();
