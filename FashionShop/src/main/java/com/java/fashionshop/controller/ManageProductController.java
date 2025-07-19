@@ -54,6 +54,15 @@ public class ManageProductController {
 	                      .toList();
 	 }
 	 
+	 @GetMapping("/products/{id}")
+	 public ResponseEntity<?> getProductById(@PathVariable("id") Integer id) {
+	     ProductEntity product = productService.findEntityById(id);
+	     if (product == null) {
+	         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
+	     }
+	     return ResponseEntity.ok(convertToDTO(product));
+	 }
+
 	@PostMapping("/products")
 	public ResponseEntity<?> addProduct(@RequestBody ProductBean productBean) {
 	    try {
@@ -139,28 +148,32 @@ public class ManageProductController {
             dto.setCategoryName(product.getCategory().getCategoryName());
         }
 
-        // ✅ Convert danh sách biến thể
-        List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
-            ProductVariantDTO variantDTO = new ProductVariantDTO();
-            variantDTO.setProductVariantId(variant.getProductVariantId());
-            variantDTO.setStock(variant.getStock());
-            variantDTO.setPrice(variant.getPrice());
-            variantDTO.setImageName(variant.getImageName());
+        if (product.getVariants() != null) {
+            List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+                ProductVariantDTO variantDTO = new ProductVariantDTO();
+                variantDTO.setProductVariantId(variant.getProductVariantId());
+                variantDTO.setStock(variant.getStock());
+                variantDTO.setPrice(variant.getPrice());
+                variantDTO.setImageName(variant.getImageName());
 
-            if (variant.getColor() != null) {
-                variantDTO.setColorId(variant.getColor().getColorId());
-                variantDTO.setColorName(variant.getColor().getColorName());
-            }
+                if (variant.getColor() != null) {
+                    variantDTO.setColorId(variant.getColor().getColorId());
+                    variantDTO.setColorName(variant.getColor().getColorName());
+                }
 
-            if (variant.getSize() != null) {
-                variantDTO.setSizeId(variant.getSize().getSizeId());
-                variantDTO.setSizeName(variant.getSize().getSizeName());
-            }
+                if (variant.getSize() != null) {
+                    variantDTO.setSizeId(variant.getSize().getSizeId());
+                    variantDTO.setSizeName(variant.getSize().getSizeName());
+                }
 
-            return variantDTO;
-        }).toList();
+                return variantDTO;
+            }).toList();
 
-        dto.setVariants(variantDTOs);
+            dto.setVariants(variantDTOs);
+        } else {
+            // Nếu chưa có biến thể thì trả về danh sách rỗng
+            dto.setVariants(List.of());
+        }
 
         return dto;
     }
