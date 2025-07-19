@@ -2,7 +2,7 @@ package com.java.fashionshop.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -34,10 +34,10 @@ public class DiscountEntity {
     private Integer quantityLimit;
 
     @Column(name = "start_date")
-    private LocalDateTime startDate;
+    private LocalDate startDate; 
 
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;   
 
     private Boolean status;
 

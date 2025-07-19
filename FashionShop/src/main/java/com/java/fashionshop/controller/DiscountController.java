@@ -5,6 +5,7 @@ import com.java.fashionshop.entity.DiscountEntity;
 import com.java.fashionshop.services.DiscountService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,14 +28,16 @@ public class DiscountController {
     }
 
     @PostMapping("/discount/create")
-    public DiscountEntity create(@RequestBody DiscountBean bean) {
-        return discountService.save(bean);
+    public ResponseEntity<DiscountEntity> create(@RequestBody DiscountBean bean) {
+        return ResponseEntity.ok(discountService.save(bean));
     }
 
     @PutMapping("/discount/update/{id}")
-    public DiscountEntity update(@PathVariable Integer id, @RequestBody DiscountBean bean) {
-        return discountService.update(id, bean);
+    public ResponseEntity<DiscountEntity> update(@PathVariable Integer id, @RequestBody DiscountBean bean) {
+        return ResponseEntity.ok(discountService.update(id, bean));
     }
+
+
 
     @DeleteMapping("/discount/delete/{id}")
     public void delete(@PathVariable Integer id) {
