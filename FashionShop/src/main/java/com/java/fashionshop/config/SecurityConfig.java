@@ -56,8 +56,10 @@ public class SecurityConfig {
                             "/api/user/reviews/**",
             			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
+              	.requestMatchers("/images/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
             	.requestMatchers("/images/**").permitAll()
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()

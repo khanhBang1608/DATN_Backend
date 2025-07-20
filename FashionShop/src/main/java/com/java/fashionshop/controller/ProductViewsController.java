@@ -57,9 +57,4 @@ public class ProductViewsController {
         return (userId != null) ? productViewsService.getRecentViewDTOs(userId) : List.of();
     }
 
-    // 3. Top sản phẩm xem nhiều nhất (không cần token)
-    @GetMapping("/product-views/top")
-    public List<ProductEntity> getTopViewedProducts() {
-        return productViewsService.getTopViewedProducts();
-    }
 }

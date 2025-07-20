@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface JpaProductViews extends JpaRepository<ProductViewsEntity, Long> {
     
-    List<ProductViewsEntity> findTop10ByUserOrderBySearchTimeDesc(UserEntity user);
+    List<ProductViewsEntity> findTop10ByUserOrderBySearchTimeDesc(UserEntity user); 
 
-    @Query("SELECT pv.product FROM ProductViewsEntity pv GROUP BY pv.product ORDER BY COUNT(pv.id) DESC")
-    List<ProductEntity> findTopViewedProducts();
 }
