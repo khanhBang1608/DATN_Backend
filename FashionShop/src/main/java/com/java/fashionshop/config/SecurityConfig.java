@@ -53,7 +53,7 @@ public class SecurityConfig {
             			    "/api/products/**",
             			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
-            	.requestMatchers("/images/**").permitAll()
+              	.requestMatchers("/images/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()
