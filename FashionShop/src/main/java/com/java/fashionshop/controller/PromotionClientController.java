@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,14 +35,17 @@ public class PromotionClientController {
      */
     @GetMapping("/active")
     public ResponseEntity<List<PromotionDTO>> getActivePromotions() {
-        LocalDateTime now = LocalDateTime.now();
-        List<PromotionDTO> list = new ArrayList<>(promotionService.findAll()).stream()
-        	    .filter(p -> Boolean.TRUE.equals(p.getStatus()) &&
-        	                 !p.getStartDate().isAfter(now) &&
-        	                 !p.getEndDate().isBefore(now))
-        	    .collect(Collectors.toList());
+        LocalDate today = LocalDate.now(); // ✅ sửa từ LocalDateTime -> LocalDate
+
+        List<PromotionDTO> list = promotionService.findAll().stream()
+            .filter(p -> Boolean.TRUE.equals(p.getStatus()) &&
+                         !p.getStartDate().isAfter(today) &&
+                         !p.getEndDate().isBefore(today))
+            .collect(Collectors.toList());
+
         return ResponseEntity.ok(list);
     }
+
     /**
      * Lấy chi tiết khuyến mãi theo ID, bao gồm các sản phẩm áp dụng
      */
