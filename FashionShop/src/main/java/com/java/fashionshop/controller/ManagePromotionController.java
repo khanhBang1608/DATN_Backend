@@ -2,6 +2,7 @@ package com.java.fashionshop.controller;
 
 import com.java.fashionshop.bean.PromotionBean;
 import com.java.fashionshop.dto.PromotionDTO;
+import com.java.fashionshop.entity.PromotionsEntity;
 import com.java.fashionshop.services.PromotionService;
 
 import jakarta.validation.Valid;
@@ -22,8 +23,8 @@ public class ManagePromotionController {
     private PromotionService service;
 
     @GetMapping
-    public ResponseEntity<List<PromotionDTO>> getAll() {
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<PromotionsEntity>> getAll() {
+        return ResponseEntity.ok(service.findAlll());
     }
 
     @GetMapping("/{id}")

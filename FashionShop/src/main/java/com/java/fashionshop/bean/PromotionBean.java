@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,10 +26,10 @@ public class PromotionBean {
     private Double discountAmount;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     @NotNull(message = "Ngày kết thúc không được để trống")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @NotNull(message = "Trạng thái không được để trống")
     private Boolean status;
