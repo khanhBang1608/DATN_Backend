@@ -30,11 +30,12 @@ public class ProductClientController {
     // ✅ 1. Lấy toàn bộ sản phẩm cho trang danh sách
     @GetMapping("/products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductEntity> products = productService.getAllEntity();
-        List<ProductDTO> result = products.stream()
-                .map(productService::convertToDTO)  // tái sử dụng convertToDTO
-                .toList();
-        return ResponseEntity.ok(result);
+        List<ProductDTO> dtos = productService.getAllEntity().stream()
+            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+            .map(productService::convertToDTO)
+            .toList();
+
+        return ResponseEntity.ok(dtos);
     }
 
     // ✅ 2. Lấy chi tiết sản phẩm theo id
