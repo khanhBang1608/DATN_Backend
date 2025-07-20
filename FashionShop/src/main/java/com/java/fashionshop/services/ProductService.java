@@ -122,27 +122,31 @@ public class ProductService {
         }
 
         // ✅ Convert danh sách biến thể
-        List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
-            ProductVariantDTO variantDTO = new ProductVariantDTO();
-            variantDTO.setProductVariantId(variant.getProductVariantId());
-            variantDTO.setStock(variant.getStock());
-            variantDTO.setPrice(variant.getPrice());
-            variantDTO.setImageName(variant.getImageName());
+        if (product.getVariants() != null) {
+            List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+                ProductVariantDTO variantDTO = new ProductVariantDTO();
+                variantDTO.setProductVariantId(variant.getProductVariantId());
+                variantDTO.setStock(variant.getStock());
+                variantDTO.setPrice(variant.getPrice());
+                variantDTO.setImageName(variant.getImageName());
 
-            if (variant.getColor() != null) {
-                variantDTO.setColorId(variant.getColor().getColorId());
-                variantDTO.setColorName(variant.getColor().getColorName());
-            }
+                if (variant.getColor() != null) {
+                    variantDTO.setColorId(variant.getColor().getColorId());
+                    variantDTO.setColorName(variant.getColor().getColorName());
+                }
 
-            if (variant.getSize() != null) {
-                variantDTO.setSizeId(variant.getSize().getSizeId());
-                variantDTO.setSizeName(variant.getSize().getSizeName());
-            }
+                if (variant.getSize() != null) {
+                    variantDTO.setSizeId(variant.getSize().getSizeId());
+                    variantDTO.setSizeName(variant.getSize().getSizeName());
+                }
 
-            return variantDTO;
-        }).toList();
+                return variantDTO;
+            }).toList();
 
-        dto.setVariants(variantDTOs);
+            dto.setVariants(variantDTOs);
+        } else {
+            dto.setVariants(new ArrayList<>()); // hoặc Collections.emptyList()
+        }
 
         return dto;
     }

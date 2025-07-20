@@ -1,7 +1,7 @@
 package com.java.fashionshop.bean;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Data
 public class DiscountBean {
@@ -12,7 +12,7 @@ public class DiscountBean {
     private Double minOrderAmount;
     private Double maxDiscountAmount;
     private Integer quantityLimit;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDate startDate; 
+    private LocalDate endDate;   
     private Boolean status;
 }
