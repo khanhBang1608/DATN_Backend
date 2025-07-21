@@ -1,0 +1,361 @@
+package com.java.fashionshop.services;
+
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.java.fashionshop.dto.OrderDTO;
+import com.java.fashionshop.dto.OrderDetailDTO;
+import com.java.fashionshop.entity.*;
+import com.java.fashionshop.jpa.JpaDiscount;
+import com.java.fashionshop.jpa.JpaOrder;
+import com.java.fashionshop.jpa.JpaProductVariant;
+import com.java.fashionshop.jpa.JpaUser;
+import com.java.fashionshop.request.OrderCreateRequest;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class OrderService {
+
+
+    @Autowired
+    private JpaOrder orderRepository;
+
+    @Autowired
+    private JpaUser userRepository;
+
+    @Autowired
+    private JpaDiscount discountRepository;
+
+    @Autowired
+    private JpaProductVariant productVariantRepository;
+
+    private Integer getAuthenticatedUserId() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
+        }
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    return new RuntimeException("ko co mail user: " + email);
+                });
+        return user.getUserId();
+    }
+
+    @Transactional
+    public OrderDTO createOrder(OrderCreateRequest request) {
+        Integer userId = getAuthenticatedUserId();
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko co mail user: " + userId);
+                });
+
+        OrderEntity order = new OrderEntity();
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
+        order.setAddress(request.getAddress());
+        order.setPaymentMethod(request.getPaymentMethod());
+        order.setStatus(0); // 0: Pending
+        order.setPaymentStatus(0); // 0: Unpaid
+        order.setShippingFee(new BigDecimal("10000"));
+        order.setDiscountAmount(BigDecimal.ZERO);
+
+        if (request.getDiscountCode() != null) {
+            DiscountEntity discount = discountRepository.findByDiscountCode(request.getDiscountCode())
+                    .orElse(null);
+            if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
+                order.setDiscount(discount);
+                order.setDiscountAmount(calculateDiscount(order, discount));
+            }
+        }
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderCreateRequest.OrderDetailRequest detailRequest : request.getOrderDetails()) {
+            if (detailRequest.getQuantity() <= 0) {
+                throw new IllegalArgumentException("so luong phai lon hon 0");
+            }
+
+            ProductVariantEntity variant = productVariantRepository.findById(detailRequest.getProductVariantId())
+                    .orElseThrow(() -> {
+                        return new EntityNotFoundException("product variant ko co");
+                    });
+
+            if (variant.getStock() < detailRequest.getQuantity()) {
+                throw new RuntimeException("het kho");
+            }
+
+            OrderDetailEntity detail = new OrderDetailEntity();
+            detail.setOrder(order);
+            detail.setQuantity(detailRequest.getQuantity());
+            detail.setPrice(variant.getPrice());
+            detail.setProductVariant(variant);
+            order.getOrderDetails().add(detail);
+            totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
+
+            variant.setStock(variant.getStock() - detailRequest.getQuantity());
+            productVariantRepository.save(variant);
+        }
+
+        order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+        order = orderRepository.save(order);
+
+        return convertToDTO(order);
+    }
+
+    public List<OrderDTO> getUserOrders() {
+        Integer userId = getAuthenticatedUserId();
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko co id: " + userId);
+                });
+
+        return orderRepository.findByUser(user)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public OrderDTO getOrderDetails(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
+
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("k co order: " + orderId);
+                });
+
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("Ko co quyen vao order");
+        }
+
+        return convertToDTO(order);
+    }
+
+    @Transactional
+    public void cancelOrder(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
+
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko tim dc order" + orderId);
+                });
+
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("ko co quyen xoa");
+        }
+
+        if (order.getStatus() != 0) {
+            throw new IllegalStateException("ko xoa dc");
+        }
+
+        for (OrderDetailEntity detail : order.getOrderDetails()) {
+            ProductVariantEntity variant = detail.getProductVariant();
+            variant.setStock(variant.getStock() + detail.getQuantity());
+            productVariantRepository.save(variant);
+        }
+
+        order.setStatus(3);
+        orderRepository.save(order);
+    }
+
+    private BigDecimal calculateDiscount(OrderEntity order, DiscountEntity discount) {
+        BigDecimal total = order.getOrderDetails().stream()
+                .map(detail -> detail.getPrice().multiply(new BigDecimal(detail.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal discountAmount = total.multiply(new BigDecimal(discount.getDiscountPercent() / 100));
+        if (discount.getMaxDiscountAmount() != null) {
+            discountAmount = discountAmount.min(new BigDecimal(discount.getMaxDiscountAmount()));
+        }
+        return discountAmount;
+    }
+
+    private OrderDTO convertToDTO(OrderEntity order) {
+        List<OrderDetailDTO> orderDetails = order.getOrderDetails().stream()
+                .map(detail -> new OrderDetailDTO(
+                        detail.getOrderDetailId(),
+                        detail.getQuantity(),
+                        detail.getPrice(),
+                        detail.getProductVariant().getProductVariantId(),
+                        detail.getProductVariant().getProduct().getName(),
+                        detail.getProductVariant().getImageName(),
+                        detail.getProductVariant().getSize().getSizeName(),
+                        detail.getProductVariant().getColor().getColorName()
+                ))
+                .collect(Collectors.toList());
+
+        return new OrderDTO(
+                order.getOrderId(),
+                order.getTotalAmount(),
+                order.getOrderDate(),
+                order.getAddress(),
+                order.getStatus(),
+                order.getShippingFee(),
+                order.getDiscountAmount(),
+                order.getPaymentMethod(),
+                order.getPaymentStatus(),
+                order.getUser().getUserId(),
+                order.getDiscount() != null ? order.getDiscount().getDiscountId() : null,
+                orderDetails,
+                order.getUser().getFullName()
+        );
+    }
+
+//    Lam lai ADMIN
+public List<OrderDTO> getAllOrders() {
+    return orderRepository.findAll()
+            .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+}
+
+    public OrderDTO getOrderById(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko co order " + orderId);
+                });
+        return convertToDTO(order);
+    }
+
+    @Transactional
+    public OrderDTO updateOrder(Integer orderId, OrderDTO orderDTO) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("k co order " + orderId);
+                });
+
+        order.setAddress(orderDTO.getAddress());
+        order.setPaymentMethod(orderDTO.getPaymentMethod());
+        order.setStatus(orderDTO.getStatus());
+        order.setPaymentStatus(orderDTO.getPaymentStatus());
+        order.setShippingFee(orderDTO.getShippingFee());
+        order.setDiscountAmount(orderDTO.getDiscountAmount());
+
+        if (orderDTO.getUserId() != null) {
+            UserEntity user = userRepository.findById(orderDTO.getUserId())
+                    .orElseThrow(() -> {
+                        return new EntityNotFoundException("ko co order " + orderId);
+                    });
+            order.setUser(user);
+        }
+
+        if (orderDTO.getDiscountId() != null) {
+            DiscountEntity discount = discountRepository.findById(orderDTO.getDiscountId())
+                    .orElseThrow(() -> {
+                        return new EntityNotFoundException("ko co discount ");
+                    });
+            order.setDiscount(discount);
+            order.setDiscountAmount(calculateDiscount(order, discount));
+        } else {
+            order.setDiscount(null);
+            order.setDiscountAmount(BigDecimal.ZERO);
+        }
+
+        order.getOrderDetails().clear();
+        for (OrderDetailDTO detailDTO : orderDTO.getOrderDetails()) {
+            if (detailDTO.getQuantity() <= 0) {
+                throw new IllegalArgumentException("so luong phai lon hon 0");
+            }
+
+            ProductVariantEntity variant = productVariantRepository.findById(detailDTO.getProductVariantId())
+                    .orElseThrow(() -> {
+                        return new EntityNotFoundException("ko co product variant " + detailDTO.getProductVariantId());
+                    });
+
+            if (variant.getStock() < detailDTO.getQuantity()) {
+                throw new RuntimeException("ko co trong kho");
+            }
+
+            OrderDetailEntity detail = new OrderDetailEntity();
+            detail.setOrder(order);
+            detail.setQuantity(detailDTO.getQuantity());
+            detail.setPrice(variant.getPrice());
+            detail.setProductVariant(variant);
+            order.getOrderDetails().add(detail);
+
+            variant.setStock(variant.getStock() - detailDTO.getQuantity());
+            productVariantRepository.save(variant);
+        }
+
+        BigDecimal totalAmount = order.getOrderDetails().stream()
+                .map(detail -> detail.getPrice().multiply(new BigDecimal(detail.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+
+        order = orderRepository.save(order);
+        return convertToDTO(order);
+    }
+
+    @Transactional
+    public void deleteOrder(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko co order");
+                });
+
+        for (OrderDetailEntity detail : order.getOrderDetails()) {
+            ProductVariantEntity variant = detail.getProductVariant();
+            variant.setStock(variant.getStock() + detail.getQuantity());
+            productVariantRepository.save(variant);
+        }
+
+        orderRepository.delete(order);
+    }
+
+    public byte[] exportInvoicePdf(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> {
+                    return new EntityNotFoundException("ko co order");
+                });
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            document.add(new Paragraph("Hoa don cua don hang #" + order.getOrderId()));
+            document.add(new Paragraph("Khach hang: " + order.getUser().getFullName()));
+            document.add(new Paragraph("Dia chi: " + order.getAddress()));
+            document.add(new Paragraph("Ngay dat hang: " + order.getOrderDate()));
+            document.add(new Paragraph("Phuong thuc thanh toan: " + order.getPaymentMethod()));
+            document.add(new Paragraph("Trang thai don han: " + order.getStatus()));
+            document.add(new Paragraph("Tong tien: " + order.getTotalAmount()));
+
+            float[] columnWidths = {1, 3, 1, 2};
+            Table table = new Table(columnWidths);
+            table.addCell("Quantity");
+            table.addCell("Product");
+            table.addCell("Price");
+            table.addCell("Total");
+
+            for (OrderDetailEntity detail : order.getOrderDetails()) {
+                table.addCell(String.valueOf(detail.getQuantity()));
+                table.addCell(detail.getProductVariant().getProduct().getName());
+                table.addCell(String.valueOf(detail.getPrice()));
+                table.addCell(String.valueOf(detail.getPrice().multiply(new BigDecimal(detail.getQuantity()))));
+            }
+
+            document.add(table);
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("loi pdf", e);
+        }
+    }
+}
