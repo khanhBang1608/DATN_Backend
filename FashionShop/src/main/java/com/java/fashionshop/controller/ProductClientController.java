@@ -26,7 +26,12 @@ public class ProductClientController {
 
     @Autowired
     private ProductVariantService productVariantService;
-
+    
+    @GetMapping("/products/top10")
+    public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
+        List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
+        return ResponseEntity.ok(dtos);
+    }
     // ✅ 1. Lấy toàn bộ sản phẩm cho trang danh sách
     @GetMapping("/products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
@@ -115,4 +120,6 @@ public class ProductClientController {
         dto.setImageName(variant.getImageName());
         return dto;
     }
+    
+
 }
