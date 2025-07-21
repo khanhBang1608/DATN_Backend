@@ -23,9 +23,10 @@ public class ManagePromotionController {
     private PromotionService service;
 
     @GetMapping
-    public ResponseEntity<List<PromotionsEntity>> getAll() {
-        return ResponseEntity.ok(service.findAlll());
+    public ResponseEntity<List<PromotionDTO>> getAll() {
+        return ResponseEntity.ok(service.findAllDto());
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Integer id) {

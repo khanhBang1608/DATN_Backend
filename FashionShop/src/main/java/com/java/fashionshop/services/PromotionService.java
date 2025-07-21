@@ -17,6 +17,37 @@ public class PromotionService {
 
     @Autowired
     private JpaPromotions promotionRepo;
+    
+    public List<PromotionDTO> findAllDto() {
+        List<PromotionsEntity> entities = promotionRepo.findAll();
+
+        return entities.stream().map(entity -> {
+            PromotionDTO dto = new PromotionDTO();
+            dto.setId(entity.getId());
+            dto.setCode(entity.getCode());
+            dto.setDescription(entity.getDescription());
+            dto.setDiscountAmount(entity.getDiscountAmount());
+            dto.setStartDate(entity.getStartDate());
+            dto.setEndDate(entity.getEndDate());
+            dto.setStatus(entity.getStatus());
+
+            // Gắn danh sách ProductPromotion nếu có
+            if (entity.getProductPromotions() != null) {
+                List<ProductPromotionDTO> ppDtos = entity.getProductPromotions().stream().map(pp -> {
+                    ProductPromotionDTO ppDto = new ProductPromotionDTO();
+                    ppDto.setId(pp.getId());
+                    ppDto.setProductVariantId(pp.getProductVariant().getProductVariantId());
+                    ppDto.setQuantityLimit(pp.getQuantityLimit());
+                    return ppDto;
+                }).collect(Collectors.toList());
+                dto.setProductPromotions(ppDtos);
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+
 
     public List<PromotionDTO> findAll() {
         return promotionRepo.findAll().stream()
