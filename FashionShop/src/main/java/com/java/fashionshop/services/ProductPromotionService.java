@@ -60,7 +60,13 @@ public class ProductPromotionService {
             return dto;
         }).collect(Collectors.toList());
     }
-
+    
+    public List<ProductPromotionDTO> findByPromotionId(Integer promotionId) {
+        List<ProductPromotionEntity> entities = productPromotionRepo.findByPromotion_Id(promotionId);
+        return entities.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     public ProductPromotionEntity findById(Integer id) {
         return productPromotionRepo.findById(id).orElse(null);

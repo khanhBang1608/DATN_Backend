@@ -31,6 +31,12 @@ public class ManageProductPromotionController {
         }
         return ResponseEntity.ok(service.convertToDTO(entity));
     }
+    
+    @GetMapping("/promotion/{promotionId}")
+    public ResponseEntity<List<ProductPromotionDTO>> getByPromotionId(@PathVariable Integer promotionId) {
+        List<ProductPromotionDTO> list = service.findByPromotionId(promotionId);
+        return ResponseEntity.ok(list);
+    }
 
 
     @GetMapping
