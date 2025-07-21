@@ -36,5 +36,6 @@ public class PromotionsEntity {
     @OneToMany(mappedBy = "promotion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductPromotionEntity> productPromotions;
 
+
 }
 

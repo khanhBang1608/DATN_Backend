@@ -2,6 +2,8 @@ package com.java.fashionshop.controller;
 
 import com.java.fashionshop.bean.ProductPromotionBean;
 import com.java.fashionshop.dto.ProductPromotionDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.entity.ProductPromotionEntity;
 import com.java.fashionshop.services.ProductPromotionService;
 
 import jakarta.validation.Valid;
@@ -20,28 +22,36 @@ public class ManageProductPromotionController {
 
     @Autowired
     private ProductPromotionService service;
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductPromotionDTO> getById(@PathVariable Integer id) {
+        ProductPromotionEntity entity = service.findById(id);
+        if (entity == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(service.convertToDTO(entity));
+    }
+
 
     @GetMapping
     public ResponseEntity<List<ProductPromotionDTO>> getAll() {
         return ResponseEntity.ok(service.findAll());
     }
+    
+
+    @GetMapping("/productVariants")
+    public List<ProductVariantDTO> getVariantsByProductId(@RequestParam Integer productId) {
+        return service.getVariantsByProductId(productId);
+    }
+
+
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody ProductPromotionBean bean, BindingResult result) {
-        if (result.hasErrors()) {
-            List<String> errors = result.getFieldErrors().stream()
-                .map(err -> err.getDefaultMessage())
-                .toList();
-            return ResponseEntity.badRequest().body(errors);
-        }
-
-        ProductPromotionDTO resultDTO = service.save(bean);
-        if (resultDTO == null) {
-            return ResponseEntity.badRequest().body("Không tìm thấy biến thể sản phẩm hoặc khuyến mãi.");
-        }
-
-        return ResponseEntity.ok(resultDTO);
+    public ResponseEntity<?> createBulk(@RequestBody List<@Valid ProductPromotionBean> beans) {
+        List<ProductPromotionDTO> result = service.saveBulk(null, beans);
+        return ResponseEntity.ok(result);
     }
+
     
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Integer id,
