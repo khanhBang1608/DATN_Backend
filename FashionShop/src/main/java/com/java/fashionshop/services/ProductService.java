@@ -7,14 +7,17 @@ import com.java.fashionshop.entity.CategoryEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.jpa.JpaCategory;
 import com.java.fashionshop.jpa.JpaProduct;
+import org.springframework.data.domain.Pageable;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -150,4 +153,13 @@ public class ProductService {
 
         return dto;
     }
+    public List<ProductDTO> getTop10NewestProductsWithVariants() {
+        Pageable pageable = PageRequest.of(0, 10);
+        List<ProductEntity> products = jpaProduct.findTop10WithVariants(pageable);
+
+        return products.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
 }
