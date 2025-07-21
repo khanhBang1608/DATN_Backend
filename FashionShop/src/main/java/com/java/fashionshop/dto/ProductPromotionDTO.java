@@ -15,4 +15,6 @@ public class ProductPromotionDTO {
 
     private Integer productVariantId;
 
+	private Integer promotionId;
+
 }
