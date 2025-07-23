@@ -18,8 +18,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 public class ReviewService {
@@ -38,9 +40,21 @@ public class ReviewService {
         return reviews.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    public boolean hasReviewForOrderDetail(Integer orderDetailId) {
+        return reviewRepository.existsByOrderDetail_OrderDetailId(orderDetailId);
+    }
 
+    // Thêm phương thức kiểm tra trạng thái đánh giá cho nhiều orderDetailId
+    public Map<Integer, Boolean> checkReviewsForOrderDetails(List<Integer> orderDetailIds) {
+        List<ReviewEntity> reviews = reviewRepository.findByOrderDetail_OrderDetailIdIn(orderDetailIds);
+        Map<Integer, Boolean> result = orderDetailIds.stream()
+                .collect(Collectors.toMap(
+                        id -> id,
+                        id -> reviews.stream().anyMatch(review -> review.getOrderDetail().getOrderDetailId().equals(id))
+                ));
+        return result;
+    }
 
-    // ✅ Tạo review từ user hiện tại
     @Transactional
     public ReviewDTO createReview(ReviewDTO reviewDTO) {
         UserEntity user = getCurrentUser();
@@ -82,17 +96,13 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
-
     public Optional<Integer> getOrderDetailIdForCurrentUserAndProduct(Integer productId) {
         UserEntity user = getCurrentUser();
-
         return orderDetailRepository
                 .findUnreviewedOrderDetailByProductIdAndUserId(productId, user.getUserId())
                 .map(OrderDetailEntity::getOrderDetailId);
     }
 
-
-    // ✅ Lấy review theo user hiện tại
     public List<ReviewDTO> getReviewsByCurrentUser() {
         UserEntity user = getCurrentUser();
         return reviewRepository.findByUser_UserId(user.getUserId()).stream()
@@ -148,8 +158,6 @@ public class ReviewService {
 
         reviewRepository.delete(review);
     }
-
-    // ---------------------------
 
     private ReviewDTO convertToDTO(ReviewEntity review) {
         ReviewDTO dto = new ReviewDTO();
