@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,8 @@ import com.java.fashionshop.jpa.JpaSizes;
 import com.java.fashionshop.services.CategoryService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -87,30 +90,49 @@ public class ManageProductController {
 	     return ResponseEntity.ok(convertToDTO(product));
 	 }
 
-	@PostMapping("/products")
-	public ResponseEntity<?> addProduct(@RequestBody ProductBean productBean) {
-	    try {
-	        ProductEntity saved = productService.save(productBean);
-	        return ResponseEntity.ok(convertToDTO(saved));
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	    }
-	}
+	 @PostMapping("/products")
+	 public ResponseEntity<?> addProduct(@Valid @RequestBody ProductBean productBean, BindingResult bindingResult) {
+	     if (bindingResult.hasErrors()) {
+	         // Trả về danh sách lỗi chi tiết
+	         String errors = bindingResult.getFieldErrors().stream()
+	                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	                 .reduce("", (a, b) -> a + "\n" + b);
+	         return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	     }
 
-	@PutMapping("/products/{id}")
-	public ResponseEntity<?> updateProduct(@PathVariable("id") Integer id, @RequestBody ProductBean productBean) {
-	    try {
-	        productBean.setProductId(id);
-	        ProductEntity updated = productService.save(productBean);
-	        return ResponseEntity.ok(convertToDTO(updated));
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	    }
-	}
+	     try {
+	         ProductEntity saved = productService.save(productBean);
+	         return ResponseEntity.ok(convertToDTO(saved));
+	     } catch (IllegalArgumentException e) {
+	         return ResponseEntity.badRequest().body(e.getMessage());
+	     } catch (Exception e) {
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
+	     }
+	 }
+
+
+	 @PutMapping("/products/{id}")
+	 public ResponseEntity<?> updateProduct(@PathVariable("id") Integer id,
+	                                        @Valid @RequestBody ProductBean productBean,
+	                                        BindingResult bindingResult) {
+	     if (bindingResult.hasErrors()) {
+	         String errors = bindingResult.getFieldErrors().stream()
+	                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	                 .reduce("", (a, b) -> a + "\n" + b);
+	         return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	     }
+
+	     try {
+	         productBean.setProductId(id);
+	         ProductEntity updated = productService.save(productBean);
+	         return ResponseEntity.ok(convertToDTO(updated));
+	     } catch (IllegalArgumentException e) {
+	         return ResponseEntity.badRequest().body(e.getMessage());
+	     } catch (Exception e) {
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
+	     }
+	 }
+
 	
 	@GetMapping("/products/{productId}/variants")
 	public ResponseEntity<List<ProductVariantDTO>> getVariantsByProductId(@PathVariable Integer productId) {
