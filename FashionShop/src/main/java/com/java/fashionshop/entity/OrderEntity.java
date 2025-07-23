@@ -26,7 +26,7 @@ public class OrderEntity {
 	@Column(name = "order_date", nullable = false)
 	private LocalDateTime orderDate;
 
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "NVARCHAR(255)")
 	private String address;
 
 	@Column(nullable = false)
