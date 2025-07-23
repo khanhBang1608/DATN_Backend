@@ -54,7 +54,8 @@ public class SecurityConfig {
             			    "/api/products/**",
                             "/api/user/cart/**",
                             "/api/user/reviews/**",
-            			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
+                            "/api/user/orders/**",
+                            "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
               	.requestMatchers("/images/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
