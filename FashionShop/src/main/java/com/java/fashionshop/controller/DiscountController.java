@@ -37,10 +37,11 @@ public class DiscountController {
         return ResponseEntity.ok(discountService.update(id, bean));
     }
 
-
-
     @DeleteMapping("/discount/delete/{id}")
     public void delete(@PathVariable Integer id) {
         discountService.delete(id);
     }
+   
+
+    
 }

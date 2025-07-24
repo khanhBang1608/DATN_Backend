@@ -6,8 +6,10 @@ import com.java.fashionshop.jpa.JpaDiscount;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DiscountService {
@@ -54,4 +56,13 @@ public class DiscountService {
         entity.setEndDate(bean.getEndDate());
         entity.setStatus(bean.getStatus());
     }
+    public List<DiscountEntity> getAvailableDiscounts() {
+        LocalDate today = LocalDate.now();
+        return jpaDiscount.findAll().stream()
+            .filter(d -> Boolean.TRUE.equals(d.getStatus()))
+            .filter(d -> (d.getStartDate() == null || !d.getStartDate().isAfter(today)) &&
+                         (d.getEndDate() == null || !d.getEndDate().isBefore(today)))
+            .collect(Collectors.toList());
+    }
+
 }

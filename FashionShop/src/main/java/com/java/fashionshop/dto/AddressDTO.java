@@ -19,4 +19,6 @@ public class AddressDTO {
     private String districtName;
     private Integer wardId;
     private String wardName;
+    private String fullAddress;
+    
 }
