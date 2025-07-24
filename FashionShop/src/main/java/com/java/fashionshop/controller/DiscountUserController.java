@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.java.fashionshop.bean.DiscountBean;
+import com.java.fashionshop.dto.DiscountDTO;
 import com.java.fashionshop.entity.DiscountEntity;
 import com.java.fashionshop.services.DiscountService;
 
@@ -24,19 +25,24 @@ public class DiscountUserController {
     @Autowired
     private DiscountService discountService;
 
-    @GetMapping("/discount/findById/{id}")
-    public DiscountEntity getById(@PathVariable Integer id) {
-        return discountService.findById(id);
-    }
-
     @PutMapping("/discount/update/{id}")
     public ResponseEntity<DiscountEntity> update(@PathVariable Integer id, @RequestBody DiscountBean bean) {
         return ResponseEntity.ok(discountService.update(id, bean));
     }
-    @GetMapping("/discount/available")
-    public ResponseEntity<List<DiscountEntity>> getAvailableDiscounts() {
-        return ResponseEntity.ok(discountService.getAvailableDiscounts());
+    @GetMapping("/discount/findById/{id}")
+    public ResponseEntity<DiscountDTO> getById(@PathVariable Integer id) {
+        DiscountEntity entity = discountService.findById(id);
+        if (entity != null) {
+            return ResponseEntity.ok(discountService.convertToDTO(entity));
+        }
+        return ResponseEntity.notFound().build();
     }
+
+    @GetMapping("/discount/available")
+    public ResponseEntity<List<DiscountDTO>> getAvailableDiscounts() {
+        return ResponseEntity.ok(discountService.getAvailableDiscountDTOs());
+    }
+
     
     
 }

@@ -1,6 +1,7 @@
 package com.java.fashionshop.controller;
 
 import com.java.fashionshop.bean.DiscountBean;
+import com.java.fashionshop.dto.DiscountDTO;
 import com.java.fashionshop.entity.DiscountEntity;
 import com.java.fashionshop.services.DiscountService;
 
@@ -18,13 +19,17 @@ public class DiscountController {
     private DiscountService discountService;
 
     @GetMapping("/discount/findAll")
-    public List<DiscountEntity> getAll() {
-        return discountService.findAll();
+    public List<DiscountDTO> getAll() {
+        return discountService.getAllDTOs();
     }
 
     @GetMapping("/discount/findById/{id}")
-    public DiscountEntity getById(@PathVariable Integer id) {
-        return discountService.findById(id);
+    public ResponseEntity<DiscountDTO> getById(@PathVariable Integer id) {
+        DiscountEntity entity = discountService.findById(id);
+        if (entity != null) {
+            return ResponseEntity.ok(discountService.convertToDTO(entity));
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/discount/create")
