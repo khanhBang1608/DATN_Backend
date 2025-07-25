@@ -76,8 +76,14 @@ public class OrderService {
             DiscountEntity discount = discountRepository.findByDiscountCode(request.getDiscountCode())
                     .orElse(null);
             if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
-                order.setDiscount(discount);
-                order.setDiscountAmount(calculateDiscount(order, discount));
+                if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
+                    discount.setQuantityLimit(discount.getQuantityLimit() - 1);
+                    discountRepository.save(discount); // ✅ cập nhật lại vào DB
+                    order.setDiscount(discount);
+                    order.setDiscountAmount(calculateDiscount(order, discount));
+                } else {
+                    throw new RuntimeException("Mã giảm giá đã hết lượt sử dụng");
+                }
             }
         }
 
