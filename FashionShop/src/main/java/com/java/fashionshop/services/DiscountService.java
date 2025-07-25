@@ -48,7 +48,6 @@ public class DiscountService {
 
     private void copyBeanToEntity(DiscountBean bean, DiscountEntity entity) {
         entity.setDiscountCode(bean.getDiscountCode());
-        entity.setDescription(bean.getDescription());
         entity.setDiscountPercent(bean.getDiscountPercent());
         entity.setMinOrderAmount(bean.getMinOrderAmount());
         entity.setMaxDiscountAmount(bean.getMaxDiscountAmount());
@@ -72,7 +71,6 @@ public class DiscountService {
         DiscountDTO dto = new DiscountDTO();
         dto.setDiscountId(entity.getDiscountId());
         dto.setDiscountCode(entity.getDiscountCode());
-        dto.setDescription(entity.getDescription());
         dto.setDiscountPercent(entity.getDiscountPercent());
         dto.setMinOrderAmount(entity.getMinOrderAmount());
         dto.setMaxDiscountAmount(entity.getMaxDiscountAmount());

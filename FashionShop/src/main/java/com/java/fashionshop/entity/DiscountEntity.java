@@ -18,9 +18,6 @@ public class DiscountEntity {
     @Column(name = "discount_code", nullable = false, unique = true)
     private String discountCode;
 
-    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
-    private String description;
-
     @Column(name = "discount_percent", nullable = false)
     private Double discountPercent;
 
