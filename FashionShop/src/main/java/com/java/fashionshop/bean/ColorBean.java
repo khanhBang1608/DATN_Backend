@@ -1,9 +1,9 @@
-package com.java.fashionshop.dto;
+package com.java.fashionshop.bean;
 
 import lombok.Data;
 
 @Data
-public class ColorsDTO {
+public class ColorBean {
     private Integer colorId;
     private String colorName;
 }

@@ -85,14 +85,14 @@ public class ProductClientController {
         // Lấy các màu không trùng
         List<ColorsDTO> colors = variants.stream()
                 .filter(v -> v.getColor() != null)
-                .map(v -> new ColorsDTO(v.getColor().getColorId(), v.getColor().getColorName()))
+                .map(v -> new ColorsDTO())
                 .distinct()
                 .toList();
 
         // Lấy các size không trùng
         List<SizesDTO> sizes = variants.stream()
                 .filter(v -> v.getSize() != null)
-                .map(v -> new SizesDTO(v.getSize().getSizeId(), v.getSize().getSizeName()))
+                .map(v -> new SizesDTO())
                 .distinct()
                 .toList();
 
