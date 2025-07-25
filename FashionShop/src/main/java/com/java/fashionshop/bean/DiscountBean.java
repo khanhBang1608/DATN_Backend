@@ -17,10 +17,6 @@ public class DiscountBean {
     @NotBlank(message = "Mã giảm giá không được để trống")
     private String discountCode;
 
-    @NotBlank(message = "Mô tả không được để trống")
-    @Size(max = 255, message = "Mô tả không được vượt quá 255 ký tự")
-    private String description;
-
 
     @NotNull(message = "Phần trăm giảm giá không được để trống")
     @DecimalMin(value = "0.0", inclusive = false, message = "Phần trăm giảm phải lớn hơn 0")
