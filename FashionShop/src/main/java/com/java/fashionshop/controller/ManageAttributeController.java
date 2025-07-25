@@ -1,13 +1,17 @@
 package com.java.fashionshop.controller;
 
+import com.java.fashionshop.bean.ColorBean;
 import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.SizesEntity;
 import com.java.fashionshop.jpa.JpaProductVariant;
 import com.java.fashionshop.services.AttributeService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,23 +34,25 @@ public class ManageAttributeController {
     }
 
     @PostMapping("/colors")
-    public ResponseEntity<?> createColor(@RequestBody ColorsEntity color) {
-        if (color.getColorName() == null || color.getColorName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("⚠️ Tên màu không được để trống.");
+    public ResponseEntity<?> createColor(@RequestBody @Valid ColorBean colorBean, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(result.getAllErrors().get(0).getDefaultMessage());
         }
 
-        if (attributeService.existsColorName(color.getColorName())) {
+        if (attributeService.existsColorName(colorBean.getColorName())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("⚠️ Tên màu đã tồn tại.");
+                    .body("Tên màu đã tồn tại.");
         }
 
+        ColorsEntity color = new ColorsEntity();
+        color.setColorName(colorBean.getColorName());
         return ResponseEntity.ok(attributeService.addColor(color));
     }
-
+    
     @PutMapping("/colors/{id}")
-    public ResponseEntity<?> updateColor(@PathVariable Integer id, @RequestBody ColorsEntity updatedColor) {
-        if (updatedColor.getColorName() == null || updatedColor.getColorName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("⚠️ Tên màu không được để trống.");
+    public ResponseEntity<?> updateColor(@PathVariable Integer id, @RequestBody @Valid ColorBean updatedBean, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(result.getAllErrors().get(0).getDefaultMessage());
         }
 
         Optional<ColorsEntity> existing = attributeService.getColorById(id);
@@ -55,14 +61,14 @@ public class ManageAttributeController {
         }
 
         ColorsEntity current = existing.get();
-
-        if (!current.getColorName().equalsIgnoreCase(updatedColor.getColorName())
-                && attributeService.existsColorName(updatedColor.getColorName())) {
+        if (!current.getColorName().equalsIgnoreCase(updatedBean.getColorName())
+                && attributeService.existsColorName(updatedBean.getColorName())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("⚠️ Tên màu đã tồn tại.");
+                    .body("Tên màu đã tồn tại.");
         }
 
-        return ResponseEntity.ok(attributeService.updateColor(id, updatedColor));
+        current.setColorName(updatedBean.getColorName());
+        return ResponseEntity.ok(attributeService.updateColor(id, current));
     }
 
     @DeleteMapping("/colors/{id}")
@@ -76,11 +82,11 @@ public class ManageAttributeController {
         if (productVariantRepository.existsByColor(color)) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
-                    .body("⚠️ Không thể xóa màu này vì đang được sử dụng trong các biến thể sản phẩm.");
+                    .body("Không thể xóa màu này vì đang được sử dụng trong các biến thể sản phẩm.");
         }
 
         attributeService.deleteColor(color);
-        return ResponseEntity.ok("✅ Màu đã được xóa thành công.");
+        return ResponseEntity.ok("Màu đã được xóa thành công.");
     }
 
     // -------- SIZES --------
