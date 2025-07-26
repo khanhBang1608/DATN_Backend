@@ -161,5 +161,10 @@ public class ProductService {
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
+    
+    public List<ProductEntity> findByCategoryId(Integer categoryId) {
+        return jpaProduct.findByCategory_CategoryId(categoryId); // JPA query method
+    }
+
 
 }

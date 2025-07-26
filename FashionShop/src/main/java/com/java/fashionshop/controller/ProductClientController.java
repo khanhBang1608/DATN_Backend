@@ -99,6 +99,23 @@ public class ProductClientController {
         ProductOptionsResponse response = new ProductOptionsResponse(colors, sizes);
         return ResponseEntity.ok(response);
     }
+    
+ // ✅ 4. Lấy sản phẩm liên quan theo id danh mục (loại trừ sản phẩm hiện tại nếu cần)
+    @GetMapping("/products/related")
+    public ResponseEntity<List<ProductDTO>> getRelatedProducts(
+            @RequestParam Integer categoryId,
+            @RequestParam(required = false) Integer excludeProductId) {
+
+        List<ProductEntity> relatedProducts = productService.findByCategoryId(categoryId);
+
+        List<ProductDTO> result = relatedProducts.stream()
+                .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId)) // loại trừ sản phẩm hiện tại
+                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // có biến thể
+                .map(productService::convertToDTO)
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
 
 
     private ProductVariantDTO convertToVariantDTO(ProductVariantEntity variant) {
