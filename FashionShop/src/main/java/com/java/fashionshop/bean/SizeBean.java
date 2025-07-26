@@ -1,9 +1,9 @@
-package com.java.fashionshop.dto;
+package com.java.fashionshop.bean;
 
 import lombok.Data;
 
 @Data
-public class SizesDTO {
+public class SizeBean {
     private Integer sizeId;
     private String sizeName;
 }

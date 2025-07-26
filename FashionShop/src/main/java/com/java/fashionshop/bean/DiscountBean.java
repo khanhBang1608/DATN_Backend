@@ -20,7 +20,7 @@ public class DiscountBean {
 
     @NotNull(message = "Phần trăm giảm giá không được để trống")
     @DecimalMin(value = "0.0", inclusive = false, message = "Phần trăm giảm phải lớn hơn 0")
-    @DecimalMax(value = "20.0", message = "Phần trăm giảm phải nhỏ hơn hoặc bằng 100")
+    @DecimalMax(value = "20.0", message = "Phần trăm giảm phải nhỏ hơn hoặc bằng 20")
     private Double discountPercent;
 
     @NotNull(message = "Giá trị đơn hàng tối thiểu không được để trống")
