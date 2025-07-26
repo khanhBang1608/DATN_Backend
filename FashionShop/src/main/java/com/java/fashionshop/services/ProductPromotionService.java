@@ -1,12 +1,15 @@
 package com.java.fashionshop.services;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.java.fashionshop.bean.ProductPromotionBean;
 import com.java.fashionshop.dto.ProductPromotionDTO;
@@ -80,26 +83,30 @@ public class ProductPromotionService {
                 .collect(Collectors.toList());
     }
 
-    public List<ProductPromotionDTO> saveBulk(Integer promotionId, List<ProductPromotionBean> beans) {
-        List<ProductPromotionDTO> result = new ArrayList<>();
+  public List<ProductPromotionDTO> saveBulk(Integer promotionId, List<ProductPromotionBean> beans) {
+    List<ProductPromotionDTO> result = new ArrayList<>();
+    List<Integer> conflictedVariantIds = new ArrayList<>();
 
-        for (ProductPromotionBean bean : beans) {
-            PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
-            ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
+    for (ProductPromotionBean bean : beans) {
+        PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
+        ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
 
-            if (promotion == null || variant == null) continue;
+        if (promotion == null || variant == null) continue;
 
-            ProductPromotionEntity entity = new ProductPromotionEntity();
-            entity.setPromotion(promotion);
-            entity.setProductVariant(variant);
-            entity.setQuantityLimit(bean.getQuantityLimit());
-
-            result.add(convertToDTO(productPromotionRepo.save(entity)));
+        if (isOverlappingPromotion(bean.getProductVariantId(), promotionId, promotion.getStartDate(), promotion.getEndDate())) {
+            conflictedVariantIds.add(bean.getProductVariantId());
+            continue;
         }
 
-        return result;
-    }
+        ProductPromotionEntity entity = new ProductPromotionEntity();
+        entity.setPromotion(promotion);
+        entity.setProductVariant(variant);
+        entity.setQuantityLimit(bean.getQuantityLimit());
 
+        result.add(convertToDTO(productPromotionRepo.save(entity)));
+    }
+    return result;
+}
     public ProductPromotionDTO update(Integer id, ProductPromotionBean bean) {
         ProductPromotionEntity entity = productPromotionRepo.findById(id).orElse(null);
         if (entity == null) return null;
@@ -108,7 +115,10 @@ public class ProductPromotionService {
         ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
 
         if (promotion == null || variant == null) return null;
-
+     // ⚠️ Thêm đoạn kiểm tra trùng thời gian ở đây
+        if (isOverlappingPromotion(bean.getProductVariantId(), bean.getPromotionId(), promotion.getStartDate(), promotion.getEndDate())) {
+            return null;
+        }
         entity.setQuantityLimit(bean.getQuantityLimit());
         entity.setPromotion(promotion);
         entity.setProductVariant(variant);
@@ -129,5 +139,24 @@ public class ProductPromotionService {
         dto.setPromotionId(entity.getPromotion().getId()); 
         return dto;
     }
+  
+    private boolean isOverlappingPromotion(Integer variantId, Integer promotionId, LocalDate newStart, LocalDate newEnd) {
+        List<ProductPromotionEntity> existing = productPromotionRepo.findByProductVariant_ProductVariantId(variantId);
+
+        for (ProductPromotionEntity item : existing) {
+            PromotionsEntity promo = item.getPromotion();
+
+            // Bỏ qua promotion đang xét (khi update)
+            if (promo.getId().equals(promotionId)) continue;
+
+            // Kiểm tra trùng thời gian
+            boolean isOverlap = !(promo.getEndDate().isBefore(newStart) || promo.getStartDate().isAfter(newEnd));
+            if (isOverlap) return true;
+        }
+
+        return false;
+    }
+
+
 
 }

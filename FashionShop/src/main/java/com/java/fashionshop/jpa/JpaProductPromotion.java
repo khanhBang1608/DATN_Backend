@@ -9,4 +9,6 @@ import com.java.fashionshop.entity.ProductPromotionEntity;
 
 public interface JpaProductPromotion extends JpaRepository<ProductPromotionEntity, Integer> {
 	List<ProductPromotionEntity> findByPromotion_Id(Integer id);
+	List<ProductPromotionEntity> findByProductVariant_ProductVariantId(Integer productVariantId);
+
 }
