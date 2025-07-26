@@ -2,6 +2,7 @@ package com.java.fashionshop.jpa;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -15,5 +16,11 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 	List<ProductEntity> findTop10WithVariants(Pageable pageable);
 	
 	List<ProductEntity> findByCategory_CategoryId(Integer categoryId);
+	
+	@Query(
+		    value = "SELECT * FROM product WHERE LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
+		    nativeQuery = true
+		)
+		List<ProductEntity> searchByName(@Param("keyword") String keyword);
 
 }

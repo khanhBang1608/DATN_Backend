@@ -165,6 +165,13 @@ public class ProductService {
     public List<ProductEntity> findByCategoryId(Integer categoryId) {
         return jpaProduct.findByCategory_CategoryId(categoryId); // JPA query method
     }
-
+    
+    public List<ProductDTO> searchProductsByName(String keyword) {
+        List<ProductEntity> entities = jpaProduct.searchByName(keyword);
+        return entities.stream()
+                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // lọc sản phẩm có biến thể
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
 }
