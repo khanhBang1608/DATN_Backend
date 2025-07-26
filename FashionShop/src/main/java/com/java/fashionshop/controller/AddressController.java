@@ -3,7 +3,6 @@ package com.java.fashionshop.controller;
 import com.java.fashionshop.bean.AddressBean;
 import com.java.fashionshop.component.JwtUtil;
 import com.java.fashionshop.dto.AddressDTO;
-import com.java.fashionshop.entity.AddressEntity;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.jpa.JpaAddress;
 import com.java.fashionshop.jpa.JpaUser;
@@ -23,111 +22,78 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user/address")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class AddressController {
-	
-	 @Autowired
-	 private JwtUtil jwtUtil;
 
-	 @Autowired
-	 private JpaUser userRepository;
-	 
-	 @Autowired
-	 private JpaAddress addressRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private JpaUser userRepository;
+
+    @Autowired
+    private JpaAddress addressRepository;
 
     @Autowired
     private AddressService addressService;
 
+    // ✅ Thêm địa chỉ mới
     @PostMapping("/add")
-    public ResponseEntity<?> addAddress(
-            HttpServletRequest request,
-            @Valid @RequestBody AddressBean addressBean) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
-        }
-
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-
-        UserEntity user = userRepository.findByEmail(email).orElse(null);
+    public ResponseEntity<?> addAddress(HttpServletRequest request, @Valid @RequestBody AddressBean addressBean) {
+        UserEntity user = extractUserFromToken(request);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized or user not found");
         }
 
         AddressDTO result = addressService.createAddress(addressBean, user);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-
+    // ✅ Lấy danh sách địa chỉ
     @GetMapping("/list")
     public ResponseEntity<?> getAddresses(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
-        }
-
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-
-        UserEntity user = userRepository.findByEmail(email).orElse(null);
-
+        UserEntity user = extractUserFromToken(request);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized or user not found");
         }
 
-        // ❌ Bỏ trả AddressEntity
-        // List<AddressEntity> addresses = addressRepository.findByUserUserId(user.getUserId());
-
-        // ✅ Dùng Service trả DTO
         List<AddressDTO> addresses = addressService.getAddressesByUserId(user.getUserId());
-
         return ResponseEntity.ok(addresses);
     }
 
-
+    // ✅ Cập nhật địa chỉ
     @PutMapping("/update/{addressId}")
     public ResponseEntity<?> updateAddress(
             HttpServletRequest request,
             @PathVariable Integer addressId,
             @Valid @RequestBody AddressBean addressBean) {
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
-        }
-
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-
-        UserEntity user = userRepository.findByEmail(email).orElse(null);
+        UserEntity user = extractUserFromToken(request);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized or user not found");
         }
 
         AddressDTO updated = addressService.updateAddress(addressId, addressBean, user);
         return ResponseEntity.ok(updated);
     }
 
-
+    // ✅ Xóa địa chỉ
     @DeleteMapping("/delete/{addressId}")
-    public ResponseEntity<?> deleteAddress(
-            HttpServletRequest request,
-            @PathVariable Integer addressId) {
-
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
-        }
-
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractEmail(token);
-
-        UserEntity user = userRepository.findByEmail(email).orElse(null);
+    public ResponseEntity<?> deleteAddress(HttpServletRequest request, @PathVariable Integer addressId) {
+        UserEntity user = extractUserFromToken(request);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized or user not found");
         }
 
         addressService.deleteAddress(addressId, user);
         return ResponseEntity.ok("Đã xóa địa chỉ thành công");
     }
 
+    // ✅ Tiện ích: Lấy thông tin người dùng từ token
+    private UserEntity extractUserFromToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractEmail(token);
+        return userRepository.findByEmail(email).orElse(null);
+    }
 }
