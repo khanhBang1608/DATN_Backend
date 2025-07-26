@@ -21,8 +21,9 @@ public class PromotionBean {
     @NotBlank(message = "Mô tả không được để trống")
     private String description;
 
-    @NotNull(message = "Số tiền giảm giá không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Số tiền giảm giá phải lớn hơn 0")
+    @NotNull(message = "Số phần trăm giảm giá không được để trống")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Phần trăm giảm giá phải lớn hơn 0")
+    @DecimalMax(value = "100.0", inclusive = true, message = "Phần trăm giảm giá không được vượt quá 100%")
     private Double discountAmount;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")

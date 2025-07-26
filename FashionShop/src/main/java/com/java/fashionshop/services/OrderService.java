@@ -76,10 +76,22 @@ public class OrderService {
             DiscountEntity discount = discountRepository.findByDiscountCode(request.getDiscountCode())
                     .orElse(null);
             if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
-                order.setDiscount(discount);
-                order.setDiscountAmount(calculateDiscount(order, discount));
+                if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
+                    discount.setQuantityLimit(discount.getQuantityLimit() - 1);
+                    discountRepository.save(discount);
+                    order.setDiscount(discount);
+
+                    // ✅ Dùng discountAmount từ frontend
+                    BigDecimal discountAmount = request.getDiscountAmount() != null
+                            ? request.getDiscountAmount()
+                            : BigDecimal.ZERO;
+                    order.setDiscountAmount(discountAmount);
+                } else {
+                    throw new RuntimeException("Mã giảm giá đã hết lượt sử dụng");
+                }
             }
         }
+
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderCreateRequest.OrderDetailRequest detailRequest : request.getOrderDetails()) {
@@ -94,13 +106,19 @@ public class OrderService {
                 throw new RuntimeException("Hết hàng cho variant: " + variant.getProductVariantId());
             }
 
+            BigDecimal price = detailRequest.getPrice();
+            if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+                price = variant.getPrice(); // fallback nếu thiếu
+            }
+
             OrderDetailEntity detail = new OrderDetailEntity();
             detail.setOrder(order);
             detail.setQuantity(detailRequest.getQuantity());
-            detail.setPrice(variant.getPrice());
+            detail.setPrice(price); // ✅ dùng giá từ request nếu có
             detail.setProductVariant(variant);
+
             order.getOrderDetails().add(detail);
-            totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
+            totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
         }
 
         order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
