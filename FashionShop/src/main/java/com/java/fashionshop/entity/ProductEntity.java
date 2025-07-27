@@ -51,5 +51,9 @@ public class ProductEntity {
     
     @OneToMany(mappedBy = "product")
     private Set<ProductViewsEntity> productViews;
+    
+    @Column(name = "view_count")
+    private Integer viewCount; 
+    
 
 }

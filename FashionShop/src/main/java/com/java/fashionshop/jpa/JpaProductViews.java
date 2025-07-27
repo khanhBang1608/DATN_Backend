@@ -11,5 +11,5 @@ import java.util.List;
 public interface JpaProductViews extends JpaRepository<ProductViewsEntity, Long> {
     
     List<ProductViewsEntity> findTop10ByUserOrderBySearchTimeDesc(UserEntity user); 
-
+    List<ProductViewsEntity> findByUserOrderBySearchTimeDesc(UserEntity user);
 }

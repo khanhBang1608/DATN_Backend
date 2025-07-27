@@ -22,5 +22,5 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 		    nativeQuery = true
 		)
 		List<ProductEntity> searchByName(@Param("keyword") String keyword);
-
+	List<ProductEntity> findTop10ByOrderByDateCreatedDesc(Pageable pageable);
 }
