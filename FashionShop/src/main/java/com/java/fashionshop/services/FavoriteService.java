@@ -1,8 +1,10 @@
 package com.java.fashionshop.services;
 
 import com.java.fashionshop.component.JwtUtil;
+import com.java.fashionshop.dto.FavoriteDTO;
 import com.java.fashionshop.entity.FavoriteEntity;
 import com.java.fashionshop.entity.ProductEntity;
+import com.java.fashionshop.entity.ProductVariantEntity;
 import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.jpa.JpaFavorite;
 import com.java.fashionshop.jpa.JpaProduct;
@@ -11,6 +13,7 @@ import com.java.fashionshop.jpa.JpaUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -71,4 +74,46 @@ public class FavoriteService {
             return "Đã thêm vào yêu thích.";
         }
     }
+    
+ // Trong FavoriteService.java
+
+    public List<FavoriteDTO> getFavorites(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Thiếu token.");
+        }
+
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractEmail(token);
+
+        Optional<UserEntity> userOpt = jpaUser.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("Người dùng không tồn tại.");
+        }
+
+        List<FavoriteEntity> favoriteEntities = jpaFavorite.findByUser(userOpt.get());
+
+        return favoriteEntities.stream()
+        	    .map(fav -> {
+        	        ProductEntity p = fav.getProduct();
+        	        List<ProductVariantEntity> variants = p.getVariants();
+
+        	        ProductVariantEntity variant = variants.isEmpty() ? null : variants.get(0);
+
+        	        String image = variant != null ? variant.getImageName() : null;
+        	        Integer price = variant != null ? variant.getPrice().intValue() : 0;
+
+        	        return new FavoriteDTO(
+        	            fav.getFavoriteId(),
+        	            p.getProductId(),
+        	            p.getName(),
+        	            image,
+        	            price,
+        	            p.getDescription()
+        	        );
+        	    })
+        	    .toList();
+
+    }
+
 }
