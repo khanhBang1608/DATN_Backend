@@ -25,6 +25,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class LoginController {
 
+    private final ManageAttributeController manageAttributeController;
+
 	@Autowired
 	private UserService userService;
 
@@ -36,6 +38,10 @@ public class LoginController {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+    LoginController(ManageAttributeController manageAttributeController) {
+        this.manageAttributeController = manageAttributeController;
+    }
 
 	@PostMapping
 	public ResponseEntity<?> login(@RequestParam("email") String email, @RequestParam("password") String password,
@@ -51,6 +57,7 @@ public class LoginController {
 						.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
 				String role = authentication.getAuthorities().iterator().next().getAuthority();
+				System.out.printf("ẹdeiojfoijfoirjoierjgoirejgoijerogijeroigjoitj",role);
 				String token = jwtUtil.generateToken(email, role);
 
 				UserDTO userDTO = new UserDTO(user.getUserId(), user.getFullName(), user.getEmail(), user.getAvatar(),
