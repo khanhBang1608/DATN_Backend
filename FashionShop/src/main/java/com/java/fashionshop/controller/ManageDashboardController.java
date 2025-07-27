@@ -33,7 +33,7 @@ public class ManageDashboardController {
 
     @GetMapping("/api/admin/dashboard/stats")
     public DashboardStatsDTO getDashboardStats() {
-        long totalUsers = jpaUser.count();
+    	long userCount = jpaUser.countByRole(1);
         long totalCategories = jpaCategory.count();
         long totalProducts = jpaProduct.count();
         long totalOrders = jpaOrder.count();
@@ -41,7 +41,7 @@ public class ManageDashboardController {
         BigDecimal totalRevenue = jpaOrder.getTotalRevenueFromVNPayOrVNPayPending();
 
         return new DashboardStatsDTO(
-                totalUsers,
+        		userCount,
                 totalCategories,
                 totalProducts,
                 totalOrders,
