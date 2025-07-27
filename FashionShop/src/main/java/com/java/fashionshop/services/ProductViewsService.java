@@ -14,7 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductViewsService {
@@ -27,35 +30,52 @@ public class ProductViewsService {
 
     @Autowired
     private JpaUser jpaUser;
-    
-    
+
+    // Ghi nhận lượt xem
     public void recordView(Integer productId, Integer userId) {
         ProductViewsEntity view = new ProductViewsEntity();
-        view.setProduct(jpaProduct.findById(productId).orElse(null));
-        view.setUser(jpaUser.findById(userId).orElse(null));
-        view.setSearchTime(LocalDateTime.now());
-        jpaProductViews.save(view);
+        ProductEntity product = jpaProduct.findById(productId).orElse(null);
+        if (product != null) {
+            view.setProduct(product);
+            view.setUser(jpaUser.findById(userId).orElse(null));
+            view.setSearchTime(LocalDateTime.now());
+            jpaProductViews.save(view);
+
+            // Tăng viewCount trong ProductEntity
+            product.setViewCount(product.getViewCount() != null ? product.getViewCount() + 1 : 1);
+            jpaProduct.save(product);
+        }
     }
 
-
+    // Lấy danh sách sản phẩm đã xem gần đây
     public List<ProductViewDTO> getRecentViewDTOs(Integer userId) {
         UserEntity user = jpaUser.findById(userId).orElse(null);
-        if (user == null) return List.of(); // Tránh null pointer
+        if (user == null) return List.of();
 
-        List<ProductViewsEntity> views = jpaProductViews.findTop10ByUserOrderBySearchTimeDesc(user);
-        return views.stream()
-                    .map(this::convertToDTO)
-                    .toList();
+        // Lấy tất cả bản ghi ProductViewsEntity, nhóm theo productId
+        List<ProductViewsEntity> views = jpaProductViews.findByUserOrderBySearchTimeDesc(user);
+        Map<Integer, ProductViewsEntity> latestViews = new HashMap<>();
+
+        // Lấy bản ghi mới nhất cho mỗi sản phẩm
+        for (ProductViewsEntity view : views) {
+            Integer productId = view.getProduct().getProductId();
+            latestViews.putIfAbsent(productId, view);
+        }
+
+        // Chuyển đổi sang DTO, giới hạn 10 sản phẩm
+        return latestViews.values().stream()
+                .limit(10)
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    
-    
+    // Chuyển đổi ProductViewsEntity sang ProductViewDTO
     public ProductViewDTO convertToDTO(ProductViewsEntity productView) {
         ProductViewDTO dto = new ProductViewDTO();
         dto.setId(productView.getId());
         dto.setSearchTime(productView.getSearchTime());
 
-        // --- Chuyển đổi ProductEntity -> ProductDTO ---
+        // Chuyển đổi ProductEntity -> ProductDTO
         ProductEntity product = productView.getProduct();
         if (product != null) {
             ProductDTO productDTO = new ProductDTO();
@@ -64,34 +84,35 @@ public class ProductViewsService {
             productDTO.setDescription(product.getDescription());
             productDTO.setDateCreated(product.getDateCreated());
             productDTO.setStatus(product.getStatus());
+            productDTO.setViewCount(product.getViewCount() != null ? product.getViewCount() : 0); // Lấy viewCount từ ProductEntity
 
-            // Lấy categoryId & categoryName
             if (product.getCategory() != null) {
                 productDTO.setCategoryId(product.getCategory().getCategoryId());
                 productDTO.setCategoryName(product.getCategory().getCategoryName());
             }
 
-            // --- Map variants ---
             if (product.getVariants() != null) {
-                List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
-                    ProductVariantDTO variantDTO = new ProductVariantDTO();
-                    variantDTO.setProductVariantId(variant.getProductVariantId());
-                    variantDTO.setStock(variant.getStock());
-                    variantDTO.setPrice(variant.getPrice());
-                    variantDTO.setImageName(variant.getImageName());
+                List<ProductVariantDTO> variantDTOs = product.getVariants().stream()
+                        .map(variant -> {
+                            ProductVariantDTO variantDTO = new ProductVariantDTO();
+                            variantDTO.setProductVariantId(variant.getProductVariantId());
+                            variantDTO.setStock(variant.getStock());
+                            variantDTO.setPrice(variant.getPrice());
+                            variantDTO.setImageName(variant.getImageName());
 
-                    if (variant.getColor() != null) {
-                        variantDTO.setColorId(variant.getColor().getColorId());
-                        variantDTO.setColorName(variant.getColor().getColorName());
-                    }
+                            if (variant.getColor() != null) {
+                                variantDTO.setColorId(variant.getColor().getColorId());
+                                variantDTO.setColorName(variant.getColor().getColorName());
+                            }
 
-                    if (variant.getSize() != null) {
-                        variantDTO.setSizeId(variant.getSize().getSizeId());
-                        variantDTO.setSizeName(variant.getSize().getSizeName());
-                    }
+                            if (variant.getSize() != null) {
+                                variantDTO.setSizeId(variant.getSize().getSizeId());
+                                variantDTO.setSizeName(variant.getSize().getSizeName());
+                            }
 
-                    return variantDTO;
-                }).toList();
+                            return variantDTO;
+                        })
+                        .collect(Collectors.toList());
 
                 productDTO.setVariants(variantDTOs);
             }
@@ -99,7 +120,7 @@ public class ProductViewsService {
             dto.setProduct(List.of(productDTO));
         }
 
-        // --- Chuyển đổi UserEntity -> UserDTO ---
+        // Chuyển đổi UserEntity -> UserDTO
         UserEntity user = productView.getUser();
         if (user != null) {
             UserDTO userDTO = new UserDTO(null, null, null, null, false, null, null);
@@ -116,6 +137,4 @@ public class ProductViewsService {
 
         return dto;
     }
-    
-
 }

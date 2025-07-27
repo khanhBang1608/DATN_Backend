@@ -14,5 +14,6 @@ public class ProductDTO {
     private Boolean status;
     private Integer categoryId;
     private String categoryName;
+    private Integer viewCount;
     private List<ProductVariantDTO> variants;
 }
