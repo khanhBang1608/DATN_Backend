@@ -10,6 +10,7 @@ import com.java.fashionshop.dto.OrderDetailDTO;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
+import com.java.fashionshop.jpa.JpaProductPromotion;
 import com.java.fashionshop.jpa.JpaProductVariant;
 import com.java.fashionshop.jpa.JpaUser;
 import com.java.fashionshop.request.OrderCreateRequest;
@@ -41,6 +42,9 @@ public class OrderService {
 
     @Autowired
     private JpaProductVariant productVariantRepository;
+    
+    @Autowired
+    private JpaProductPromotion productPromotionRepository;
 
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -231,7 +235,22 @@ public class OrderService {
             totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
         }
 
-        // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3
+        if (orderDTO.getStatus() == 1 && previousStatus != 1) {
+            adjustStockForOrder(order, false);
+
+            for (OrderDetailEntity detail : order.getOrderDetails()) {
+                List<ProductPromotionEntity> promos = productPromotionRepository
+                        .findByProductVariant_ProductVariantId(detail.getProductVariant().getProductVariantId());
+                for (ProductPromotionEntity promo : promos) {
+                    if (promo.getQuantityLimit() != null && promo.getQuantityLimit() >= detail.getQuantity()) {
+                        promo.setQuantityLimit(promo.getQuantityLimit() - detail.getQuantity());
+                        productPromotionRepository.save(promo);
+                    }
+                }
+            }
+        }
+        
+     // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3
         if (orderDTO.getStatus() == 3 && previousStatus != 3) {
             adjustStockForOrder(order, false);
         }
@@ -239,7 +258,7 @@ public class OrderService {
         else if (previousStatus == 3 && orderDTO.getStatus() != 3) {
             adjustStockForOrder(order, true);
         }
-
+        
         order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
         order = orderRepository.save(order);
         return convertToDTO(order);
