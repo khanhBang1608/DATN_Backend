@@ -45,10 +45,10 @@
 
             if (media != null && !media.isEmpty() && !"text".equals(reviewType)) {
                 String fileName = System.currentTimeMillis() + "_" + media.getOriginalFilename();
-                Path filePath = Paths.get("uploads/reviews/" + fileName);
+                Path filePath = Paths.get("images/" + fileName);
                 Files.createDirectories(filePath.getParent());
                 Files.write(filePath, media.getBytes());
-                String mediaUrl = "/uploads/reviews/" + fileName;
+                String mediaUrl = fileName;
 
                 ReviewMediaDTO mediaDTO = new ReviewMediaDTO();
                 mediaDTO.setReviewUrl(mediaUrl);
