@@ -1,14 +1,18 @@
 package com.java.fashionshop.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomNumberEditor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -153,7 +157,14 @@ public class ManageProductController {
 	}
 	
 	@PostMapping("/product-variants")
-	public ResponseEntity<?> addProductVariant(@ModelAttribute ProductVariantBean bean) {
+	public ResponseEntity<?> addProductVariant(@Valid @ModelAttribute ProductVariantBean bean, BindingResult bindingResult) {
+	    if (bindingResult.hasErrors()) {
+	        String errors = bindingResult.getFieldErrors().stream()
+	            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	            .reduce("", (a, b) -> a + "\n" + b);
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	    }
+
 	    try {
 	        ProductVariantEntity saved = productVariantService.save(bean);
 	        return ResponseEntity.ok(convertToDTO(saved));
@@ -168,17 +179,18 @@ public class ManageProductController {
 	@PutMapping("/product-variants/update/{variantId}")
 	public ResponseEntity<?> updateVariant(
 	        @PathVariable Integer variantId,
-	        @ModelAttribute ProductVariantBean bean) {
+	        @Valid @ModelAttribute ProductVariantBean bean,
+	        BindingResult bindingResult) {
+
+	    if (bindingResult.hasErrors()) {
+	        String errors = bindingResult.getFieldErrors().stream()
+	            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	            .reduce("", (a, b) -> a + "\n" + b);
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	    }
 
 	    try {
-	    	ProductVariantEntity existing = jpaProductVariant.findById(bean.getVariantId())
-	    		    .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
-	        // Nếu tách riêng hàm validate thì dùng hàm này
-	        productVariantService.validateUpdateInput(bean,existing);
-
-	        // Gọi service update
 	        ProductVariantEntity updated = productVariantService.update(variantId, bean);
-
 	        return ResponseEntity.ok("Cập nhật biến thể thành công.");
 	    } catch (IllegalArgumentException e) {
 	        return ResponseEntity.badRequest().body("Lỗi dữ liệu: " + e.getMessage());
@@ -267,5 +279,11 @@ public class ManageProductController {
 
 	    return dto;
 	}
+	
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+	    binder.registerCustomEditor(BigDecimal.class, new CustomNumberEditor(BigDecimal.class, true));
+	}
+
 
 }
