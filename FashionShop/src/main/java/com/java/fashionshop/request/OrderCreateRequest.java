@@ -17,6 +17,7 @@ public class OrderCreateRequest {
     private BigDecimal discountAmount;
 
     private List<OrderDetailRequest> orderDetails;
+    private Integer status;
  
     @Data
     public static class OrderDetailRequest {
