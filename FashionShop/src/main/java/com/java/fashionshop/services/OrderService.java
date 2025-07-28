@@ -7,6 +7,8 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderDetailDTO;
+import com.java.fashionshop.dto.ProductDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
@@ -382,5 +384,40 @@ public class OrderService {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi tạo PDF", e);
         }
+    }
+    public List<ProductDTO> getTop50BestSellingProducts() {
+        List<Object[]> results = orderRepository.findTop50BestSellingProducts();
+        return results.stream().limit(50).map(result -> {
+            ProductEntity product = (ProductEntity) result[0];
+            Long totalSold = (Long) result[1];
+
+            ProductDTO dto = new ProductDTO();
+            dto.setProductId(product.getProductId());
+            dto.setName(product.getName());
+            dto.setDescription(product.getDescription());
+            dto.setDateCreated(product.getDateCreated());
+            dto.setStatus(product.getStatus());
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+            dto.setViewCount(totalSold.intValue()); // Tạm dùng viewCount để lưu totalSold
+
+            List<ProductVariantDTO> variants = product.getVariants().stream()
+                .map(v -> {
+                    ProductVariantDTO variantDTO = new ProductVariantDTO();
+                    variantDTO.setProductVariantId(v.getProductVariantId());
+                    variantDTO.setStock(v.getStock());
+                    variantDTO.setPrice(v.getPrice());
+                    variantDTO.setImageName(v.getImageName());
+                    variantDTO.setColorId(v.getColor().getColorId());
+                    variantDTO.setColorName(v.getColor().getColorName());
+                    variantDTO.setSizeId(v.getSize().getSizeId());
+                    variantDTO.setSizeName(v.getSize().getSizeName());
+                    return variantDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setVariants(variants);
+
+            return dto;
+        }).collect(Collectors.toList());
     }
 }

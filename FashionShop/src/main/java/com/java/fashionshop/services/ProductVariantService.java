@@ -62,7 +62,6 @@ public class ProductVariantService {
     }
 
     public ProductVariantEntity save(ProductVariantBean bean) {
-        validateInput(bean);
 
         // Kiểm tra biến thể sản phẩm đã tồn tại hay chưa
         boolean exists = jpaProductVariant.findAll().stream().anyMatch(variant ->

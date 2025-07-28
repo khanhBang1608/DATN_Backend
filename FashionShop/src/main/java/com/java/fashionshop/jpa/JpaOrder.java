@@ -24,5 +24,13 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 		       "WHERE o.status = 3 OR (LOWER(o.paymentMethod) = 'vnpay' AND o.status <> 3) " +
 		       "GROUP BY FUNCTION('MONTH', o.orderDate)")
 		List<Map<String, Object>> getMonthlyRevenue();
-
+	@Query("SELECT p, SUM(od.quantity) as totalSold " +
+	           "FROM OrderEntity o " +
+	           "JOIN o.orderDetails od " +
+	           "JOIN od.productVariant pv " +
+	           "JOIN pv.product p " +
+	           "WHERE o.status = 3 " +
+	           "GROUP BY p " +
+	           "ORDER BY totalSold DESC")
+	    List<Object[]> findTop50BestSellingProducts();
 }
