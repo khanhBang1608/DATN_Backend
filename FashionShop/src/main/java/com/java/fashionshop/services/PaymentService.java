@@ -12,7 +12,6 @@ import java.util.*;
 
 @Service
 public class PaymentService {
-	
 	public String createOrder(int totalPrice) {
 
 		String vnp_Version = "2.1.0";
@@ -34,7 +33,7 @@ public class PaymentService {
 		vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
 		vnp_Params.put("vnp_OrderInfo", "OrderInfo");
 		vnp_Params.put("vnp_OrderType", orderType);
-		vnp_Params.put("vnp_BankCode", bankCode);
+//		vnp_Params.put("vnp_BankCode", bankCode);
 
 		String locate = "vn";
 		vnp_Params.put("vnp_Locale", locate);
