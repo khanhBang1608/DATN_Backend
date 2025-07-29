@@ -29,7 +29,7 @@ public class PaymentController {
     }
 
     // ✅ PUBLIC - VNPAY redirect về đây, không yêu cầu JWT
-    @GetMapping("/paymentSuccess")
+    @GetMapping("/api/public/paymentSuccess")
     public String paymentSuccess(@RequestParam Map<String, String> params, Model model) {
         String vnp_SecureHash = params.remove("vnp_SecureHash");
 

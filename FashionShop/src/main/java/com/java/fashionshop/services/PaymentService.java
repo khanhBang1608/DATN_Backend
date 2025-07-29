@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.java.fashionshop.config.PaymentConfig;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -16,7 +17,7 @@ public class PaymentService {
 
 		String vnp_Version = "2.1.0";
 		String vnp_Command = "pay";
-		String bankCode = "NCB";
+//		String bankCode = "NCB";
 
 		String vnp_TxnRef = PaymentConfig.getRandomNumber(8);
 		String vnp_IpAddr = "127.0.0.1";
@@ -28,6 +29,9 @@ public class PaymentService {
 		vnp_Params.put("vnp_Command", vnp_Command);
 		vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
 		vnp_Params.put("vnp_Amount", String.valueOf(totalPrice * 100));
+//		BigDecimal amount = BigDecimal.valueOf(totalPrice).multiply(BigDecimal.valueOf(100));
+//		vnp_Params.put("vnp_Amount", amount.toBigInteger().toString());
+
 		vnp_Params.put("vnp_CurrCode", "VND");
 
 		vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
