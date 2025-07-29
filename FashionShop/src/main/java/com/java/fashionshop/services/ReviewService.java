@@ -195,4 +195,15 @@ public class ReviewService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
     }
+
+    public Double getAverageRatingByProductId(Integer productId) {
+        List<ReviewEntity> reviews = reviewRepository.findByOrderDetail_ProductVariant_Product_ProductId(productId);
+        if (reviews.isEmpty()) return null;
+
+        return reviews.stream()
+                .mapToInt(ReviewEntity::getRating)
+                .average()
+                .orElse(0.0);
+    }
+
 }

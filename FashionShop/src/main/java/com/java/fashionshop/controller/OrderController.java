@@ -42,4 +42,12 @@ public class OrderController {
         orderService.cancelOrder(orderId);
         return ResponseEntity.ok("Order cancelled successfully");
     }
+
+    @PutMapping("/{orderId}/return-request")
+    public ResponseEntity<?> requestReturn(@PathVariable Integer orderId) {
+        orderService.requestReturn(orderId);
+        return ResponseEntity.ok("Đã gửi yêu cầu trả hàng");
+    }
+
+
 }

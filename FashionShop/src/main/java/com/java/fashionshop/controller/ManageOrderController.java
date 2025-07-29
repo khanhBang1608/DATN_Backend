@@ -50,4 +50,17 @@ public class ManageOrderController {
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
+
+    @PutMapping("/{orderId}/approve-return")
+    public ResponseEntity<?> approveReturn(@PathVariable Integer orderId) {
+        orderService.acceptReturn(orderId);
+        return ResponseEntity.ok("Trả hàng đã được duyệt");
+    }
+
+    @PutMapping("/{orderId}/reject-return")
+    public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId) {
+        orderService.rejectReturn(orderId);
+        return ResponseEntity.ok("Đã từ chối yêu cầu trả hàng");
+    }
+
 }

@@ -420,4 +420,50 @@ public class OrderService {
             return dto;
         }).collect(Collectors.toList());
     }
+
+    @Transactional
+    public void requestReturn(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("Không có quyền gửi yêu cầu trả hàng cho đơn này");
+        }
+
+        if (order.getStatus() != 3) {
+            throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
+        }
+
+        order.setStatus(4);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void acceptReturn(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        }
+
+        order.setStatus(6);
+        adjustStockForOrder(order, true);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void rejectReturn(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        }
+
+        order.setStatus(7);
+        orderRepository.save(order);
+    }
+
 }
