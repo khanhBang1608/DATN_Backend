@@ -164,6 +164,11 @@
     <artifactId>spring-security-crypto</artifactId>
 </dependency>
 
+		<dependency>
+			<groupId>com.example</groupId>
+			<artifactId>java6</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
