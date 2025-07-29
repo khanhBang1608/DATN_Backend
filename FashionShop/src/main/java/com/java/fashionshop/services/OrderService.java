@@ -85,7 +85,7 @@ public class OrderService {
                 if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
                     discount.setQuantityLimit(discount.getQuantityLimit() - 1);
                     discountRepository.save(discount);
-                    order.setDiscount(discount);
+                    order.setDiscountCode(discount.getDiscountCode());
 
                     // ✅ Dùng discountAmount từ frontend
                     BigDecimal discountAmount = request.getDiscountAmount() != null
@@ -203,13 +203,13 @@ public class OrderService {
             order.setUser(user);
         }
 
-        if (orderDTO.getDiscountId() != null) {
-            DiscountEntity discount = discountRepository.findById(orderDTO.getDiscountId())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountId()));
-            order.setDiscount(discount);
+        if (orderDTO.getDiscountCode() != null) {
+            DiscountEntity discount = discountRepository.findByDiscountCode(orderDTO.getDiscountCode())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountCode()));
+            order.setDiscountCode(discount.getDiscountCode());
             order.setDiscountAmount(calculateDiscount(order, discount));
         } else {
-            order.setDiscount(null);
+            order.setDiscountCode(null);
             order.setDiscountAmount(BigDecimal.ZERO);
         }
 
@@ -328,7 +328,7 @@ public class OrderService {
                 order.getPaymentMethod(),
                 order.getPaymentStatus(),
                 order.getUser().getUserId(),
-                order.getDiscount() != null ? order.getDiscount().getDiscountId() : null,
+                order.getDiscountCode(),
                 orderDetails,
                 order.getUser().getFullName()
         );

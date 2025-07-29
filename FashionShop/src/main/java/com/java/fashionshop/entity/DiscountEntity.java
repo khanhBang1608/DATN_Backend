@@ -38,6 +38,4 @@ public class DiscountEntity {
 
     private Boolean status;
 
-    @OneToMany(mappedBy = "discount")
-    private List<OrderEntity> orders;
 }
