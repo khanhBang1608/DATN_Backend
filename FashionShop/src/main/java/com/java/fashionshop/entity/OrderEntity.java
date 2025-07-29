@@ -49,11 +49,9 @@ public class OrderEntity {
 	@JoinColumn(name = "user_id", nullable = false)
 	private UserEntity user;
 
-	// Quan hệ với Discount (nullable)
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "discount_id")
-	private DiscountEntity discount;
-
+	@Column(name = "discount_code", columnDefinition = "VARCHAR(50)")
+	private String discountCode;
+	
 	// Quan hệ với OrderDetail
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderDetailEntity> orderDetails = new ArrayList<>();

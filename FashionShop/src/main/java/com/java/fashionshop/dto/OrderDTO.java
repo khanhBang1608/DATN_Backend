@@ -20,7 +20,7 @@ public class OrderDTO {
     private String paymentMethod;
     private Integer paymentStatus;
     private Integer userId;
-    private Integer discountId;
+    private String discountCode;
     private List<OrderDetailDTO> orderDetails;
     private String userFullName; // Added
 //    private String userPhoneNumber;

@@ -7,6 +7,8 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderDetailDTO;
+import com.java.fashionshop.dto.ProductDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
@@ -83,7 +85,7 @@ public class OrderService {
                 if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
                     discount.setQuantityLimit(discount.getQuantityLimit() - 1);
                     discountRepository.save(discount);
-                    order.setDiscount(discount);
+                    order.setDiscountCode(discount.getDiscountCode());
 
                     // ✅ Dùng discountAmount từ frontend
                     BigDecimal discountAmount = request.getDiscountAmount() != null
@@ -201,13 +203,13 @@ public class OrderService {
             order.setUser(user);
         }
 
-        if (orderDTO.getDiscountId() != null) {
-            DiscountEntity discount = discountRepository.findById(orderDTO.getDiscountId())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountId()));
-            order.setDiscount(discount);
+        if (orderDTO.getDiscountCode() != null) {
+            DiscountEntity discount = discountRepository.findByDiscountCode(orderDTO.getDiscountCode())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountCode()));
+            order.setDiscountCode(discount.getDiscountCode());
             order.setDiscountAmount(calculateDiscount(order, discount));
         } else {
-            order.setDiscount(null);
+            order.setDiscountCode(null);
             order.setDiscountAmount(BigDecimal.ZERO);
         }
 
@@ -326,7 +328,7 @@ public class OrderService {
                 order.getPaymentMethod(),
                 order.getPaymentStatus(),
                 order.getUser().getUserId(),
-                order.getDiscount() != null ? order.getDiscount().getDiscountId() : null,
+                order.getDiscountCode(),
                 orderDetails,
                 order.getUser().getFullName()
         );
@@ -383,4 +385,85 @@ public class OrderService {
             throw new RuntimeException("Lỗi tạo PDF", e);
         }
     }
+    public List<ProductDTO> getTop50BestSellingProducts() {
+        List<Object[]> results = orderRepository.findTop50BestSellingProducts();
+        return results.stream().limit(50).map(result -> {
+            ProductEntity product = (ProductEntity) result[0];
+            Long totalSold = (Long) result[1];
+
+            ProductDTO dto = new ProductDTO();
+            dto.setProductId(product.getProductId());
+            dto.setName(product.getName());
+            dto.setDescription(product.getDescription());
+            dto.setDateCreated(product.getDateCreated());
+            dto.setStatus(product.getStatus());
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+            dto.setViewCount(totalSold.intValue()); // Tạm dùng viewCount để lưu totalSold
+
+            List<ProductVariantDTO> variants = product.getVariants().stream()
+                .map(v -> {
+                    ProductVariantDTO variantDTO = new ProductVariantDTO();
+                    variantDTO.setProductVariantId(v.getProductVariantId());
+                    variantDTO.setStock(v.getStock());
+                    variantDTO.setPrice(v.getPrice());
+                    variantDTO.setImageName(v.getImageName());
+                    variantDTO.setColorId(v.getColor().getColorId());
+                    variantDTO.setColorName(v.getColor().getColorName());
+                    variantDTO.setSizeId(v.getSize().getSizeId());
+                    variantDTO.setSizeName(v.getSize().getSizeName());
+                    return variantDTO;
+                })
+                .collect(Collectors.toList());
+            dto.setVariants(variants);
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void requestReturn(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("Không có quyền gửi yêu cầu trả hàng cho đơn này");
+        }
+
+        if (order.getStatus() != 3) {
+            throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
+        }
+
+        order.setStatus(4);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void acceptReturn(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        }
+
+        order.setStatus(6);
+        adjustStockForOrder(order, true);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void rejectReturn(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        }
+
+        order.setStatus(7);
+        orderRepository.save(order);
+    }
+
 }

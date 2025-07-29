@@ -1,5 +1,6 @@
 package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.request.OrderCreateRequest;
 import com.java.fashionshop.services.OrderService;
 import jakarta.validation.Valid;
@@ -41,4 +42,12 @@ public class OrderController {
         orderService.cancelOrder(orderId);
         return ResponseEntity.ok("Order cancelled successfully");
     }
+
+    @PutMapping("/{orderId}/return-request")
+    public ResponseEntity<?> requestReturn(@PathVariable Integer orderId) {
+        orderService.requestReturn(orderId);
+        return ResponseEntity.ok("Đã gửi yêu cầu trả hàng");
+    }
+
+
 }

@@ -10,16 +10,21 @@ import com.java.fashionshop.entity.ProductVariantEntity;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
 
+import com.java.fashionshop.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class ProductClientController {
+
+    @Autowired
+    private ReviewService reviewService;
 
     @Autowired
     private ProductService productService;
@@ -62,7 +67,17 @@ public class ProductClientController {
                 .toList();
         return ResponseEntity.ok(result);
     }
-    
+
+    @GetMapping("/variants/{variantId}/product-id")
+    public ResponseEntity<?> getProductIdByVariantId(@PathVariable Integer variantId) {
+        ProductVariantEntity variant = productVariantService.findEntityById(variantId);
+        if (variant == null || variant.getProduct() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().body(Map.of("productId", variant.getProduct().getProductId()));
+    }
+
+
     @GetMapping("/products/{productId}/variant")
     public ResponseEntity<?> getVariantByColorAndSize(
             @PathVariable Integer productId,
@@ -142,5 +157,11 @@ public class ProductClientController {
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String keyword) {
         List<ProductDTO> results = productService.searchProductsByName(keyword);
         return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/products/{productId}/average-rating")
+    public ResponseEntity<Double> getAverageRating(@PathVariable Integer productId) {
+        Double average = reviewService.getAverageRatingByProductId(productId);
+        return ResponseEntity.ok(average != null ? average : 0.0);
     }
 }
