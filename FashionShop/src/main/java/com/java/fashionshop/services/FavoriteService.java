@@ -94,26 +94,18 @@ public class FavoriteService {
         List<FavoriteEntity> favoriteEntities = jpaFavorite.findByUser(userOpt.get());
 
         return favoriteEntities.stream()
-        	    .map(fav -> {
-        	        ProductEntity p = fav.getProduct();
-        	        List<ProductVariantEntity> variants = p.getVariants();
+                .map(fav -> {
+                    ProductEntity product = fav.getProduct();
+                    ProductVariantEntity variant = product.getVariants().stream().findFirst().orElse(null);
 
-        	        ProductVariantEntity variant = variants.isEmpty() ? null : variants.get(0);
-
-        	        String image = variant != null ? variant.getImageName() : null;
-        	        Integer price = variant != null ? variant.getPrice().intValue() : 0;
-
-        	        return new FavoriteDTO(
-        	            fav.getFavoriteId(),
-        	            p.getProductId(),
-        	            p.getName(),
-        	            image,
-        	            price,
-        	            p.getDescription()
-        	        );
-        	    })
-        	    .toList();
-
+                    return new FavoriteDTO(
+                        fav.getFavoriteId(),
+                        product.getProductId(), 
+                        product.getName(),
+                        variant != null ? variant.getImageName() : null
+                    );
+                })
+                .toList();
     }
 
 }
