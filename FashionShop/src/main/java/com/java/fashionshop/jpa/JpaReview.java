@@ -27,4 +27,6 @@ public interface JpaReview extends JpaRepository<ReviewEntity, Integer> {
 
     List<ReviewEntity> findByOrderDetail_ProductVariant_Product_ProductId(Integer productId);
     List<ReviewEntity> findByUser_UserId(Integer userId);
+    List<ReviewEntity> findByOrderDetail_OrderDetailIdIn(List<Integer> orderDetailId);
+    Boolean existsByOrderDetail_OrderDetailId(Integer orderDetailId);
 }

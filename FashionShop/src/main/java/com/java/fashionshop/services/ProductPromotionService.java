@@ -1,16 +1,24 @@
 package com.java.fashionshop.services;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.java.fashionshop.bean.ProductPromotionBean;
 import com.java.fashionshop.dto.ProductPromotionDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductPromotionEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
 import com.java.fashionshop.entity.PromotionsEntity;
+import com.java.fashionshop.jpa.JpaProduct;
 import com.java.fashionshop.jpa.JpaProductPromotion;
 import com.java.fashionshop.jpa.JpaPromotions;
 import com.java.fashionshop.jpa.JpaProductVariant;
@@ -26,6 +34,48 @@ public class ProductPromotionService {
 
     @Autowired
     private JpaProductVariant JpaProductVariant;
+    
+    @Autowired
+    private JpaProduct jpaProduct;
+
+    
+
+    public List<ProductVariantDTO> getVariantsByProductId(Integer productId) {
+        List<ProductVariantEntity> variants = JpaProductVariant.findByProduct_ProductId(productId);
+
+        return variants.stream().map(variant -> {
+            ProductVariantDTO dto = new ProductVariantDTO();
+            dto.setProductVariantId(variant.getProductVariantId());
+            dto.setStock(variant.getStock());
+            dto.setPrice(variant.getPrice());
+            dto.setImageName(variant.getImageName());
+
+            if (variant.getColor() != null) {
+                dto.setColorId(variant.getColor().getColorId());
+                dto.setColorName(variant.getColor().getColorName());
+            }
+
+            if (variant.getSize() != null) {
+                dto.setSizeId(variant.getSize().getSizeId());
+                dto.setSizeName(variant.getSize().getSizeName());
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+    
+    public List<ProductPromotionDTO> findByPromotionId(Integer promotionId) {
+        List<ProductPromotionEntity> entities = productPromotionRepo.findByPromotion_Id(promotionId);
+        return entities.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ProductPromotionEntity findById(Integer id) {
+        return productPromotionRepo.findById(id).orElse(null);
+    }
+
+
 
     public List<ProductPromotionDTO> findAll() {
         return productPromotionRepo.findAll().stream()
@@ -33,20 +83,30 @@ public class ProductPromotionService {
                 .collect(Collectors.toList());
     }
 
-    public ProductPromotionDTO save(ProductPromotionBean bean) {
-    	PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
-    	ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
+  public List<ProductPromotionDTO> saveBulk(Integer promotionId, List<ProductPromotionBean> beans) {
+    List<ProductPromotionDTO> result = new ArrayList<>();
+    List<Integer> conflictedVariantIds = new ArrayList<>();
 
-        if (promotion == null || variant == null) return null;
+    for (ProductPromotionBean bean : beans) {
+        PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
+        ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
+
+        if (promotion == null || variant == null) continue;
+
+        if (isOverlappingPromotion(bean.getProductVariantId(), promotionId, promotion.getStartDate(), promotion.getEndDate())) {
+            conflictedVariantIds.add(bean.getProductVariantId());
+            continue;
+        }
 
         ProductPromotionEntity entity = new ProductPromotionEntity();
-        entity.setQuantityLimit(bean.getQuantityLimit());
         entity.setPromotion(promotion);
         entity.setProductVariant(variant);
+        entity.setQuantityLimit(bean.getQuantityLimit());
 
-        return convertToDTO(productPromotionRepo.save(entity));
+        result.add(convertToDTO(productPromotionRepo.save(entity)));
     }
-    
+    return result;
+}
     public ProductPromotionDTO update(Integer id, ProductPromotionBean bean) {
         ProductPromotionEntity entity = productPromotionRepo.findById(id).orElse(null);
         if (entity == null) return null;
@@ -55,7 +115,10 @@ public class ProductPromotionService {
         ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
 
         if (promotion == null || variant == null) return null;
-
+     // ⚠️ Thêm đoạn kiểm tra trùng thời gian ở đây
+        if (isOverlappingPromotion(bean.getProductVariantId(), bean.getPromotionId(), promotion.getStartDate(), promotion.getEndDate())) {
+            return null;
+        }
         entity.setQuantityLimit(bean.getQuantityLimit());
         entity.setPromotion(promotion);
         entity.setProductVariant(variant);
@@ -68,15 +131,32 @@ public class ProductPromotionService {
         productPromotionRepo.deleteById(id);
     }
 
-    private ProductPromotionDTO convertToDTO(ProductPromotionEntity entity) {
+    public ProductPromotionDTO convertToDTO(ProductPromotionEntity entity) {
         ProductPromotionDTO dto = new ProductPromotionDTO();
         dto.setId(entity.getId());
         dto.setQuantityLimit(entity.getQuantityLimit());
         dto.setProductVariantId(entity.getProductVariant().getProductVariantId());
-        dto.setProductVariantName(entity.getProductVariant().getProduct().getName()); // giả sử có getName()
-        dto.setColor(entity.getProductVariant().getColor().getColorName());
-        dto.setSize(entity.getProductVariant().getSize().getSizeName());
+        dto.setPromotionId(entity.getPromotion().getId()); 
         return dto;
     }
-    
+  
+    private boolean isOverlappingPromotion(Integer variantId, Integer promotionId, LocalDate newStart, LocalDate newEnd) {
+        List<ProductPromotionEntity> existing = productPromotionRepo.findByProductVariant_ProductVariantId(variantId);
+
+        for (ProductPromotionEntity item : existing) {
+            PromotionsEntity promo = item.getPromotion();
+
+            // Bỏ qua promotion đang xét (khi update)
+            if (promo.getId().equals(promotionId)) continue;
+
+            // Kiểm tra trùng thời gian
+            boolean isOverlap = !(promo.getEndDate().isBefore(newStart) || promo.getStartDate().isAfter(newEnd));
+            if (isOverlap) return true;
+        }
+
+        return false;
+    }
+
+
+
 }

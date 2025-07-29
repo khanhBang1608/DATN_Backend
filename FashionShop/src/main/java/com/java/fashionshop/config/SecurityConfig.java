@@ -45,16 +45,22 @@ public class SecurityConfig {
             			    "/api/login",
             			    "/css/**",
             			    "/js/**",
+            			    "/api/forgot-password",         // 👈 THÊM DÒNG NÀY
+            		        "/api/verify-otp",              // 👈 THÊM DÒNG NÀY
+            		        "/api/reset-password",          // 👈 THÊM DÒNG NÀY
             			    "/api/register/**",         // 👈 Đăng ký, OTP
             			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
             			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
             			    "/api/products/**",
                             "/api/user/cart/**",
                             "/api/user/reviews/**",
-            			    "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
+                            "/api/user/orders/**",
+                            "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
             			).permitAll()
+              	.requestMatchers("/images/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
             	.requestMatchers("/images/**").permitAll()
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .anyRequest().authenticated()

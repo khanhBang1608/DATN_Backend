@@ -90,57 +90,66 @@ public class CartService {
     }
 
     public CartDTO addItemToCart(Integer productVariantId, Integer quantity) {
-        Integer userId = getAuthenticatedUserId();
-        if (quantity <= 0) {
-            logger.error("Invalid quantity: {}", quantity);
-            throw new IllegalArgumentException("Quantity must be greater than 0");
-        }
+    Integer userId = getAuthenticatedUserId();
 
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    logger.error("User not found for userId: {}", userId);
-                    return new RuntimeException("User not found for userId: " + userId);
-                });
-        ProductVariantEntity productVariant = productVariantRepository.findById(productVariantId)
-                .orElseThrow(() -> {
-                    logger.error("Product variant not found for productVariantId: {}", productVariantId);
-                    return new RuntimeException("Product variant not found");
-                });
-
-        if (productVariant.getStock() < quantity) {
-            logger.error("Insufficient stock for productVariantId: {}, requested: {}, available: {}",
-                    productVariantId, quantity, productVariant.getStock());
-            throw new RuntimeException("Insufficient stock");
-        }
-
-        CartEntity cart = cartRepository.findByUserUserId(userId)
-                .orElseGet(() -> {
-                    logger.info("Creating new cart for userId: {}", userId);
-                    return createCartForUser(user);
-                });
-
-        Optional<CartDetailEntity> existingDetail = cartDetailRepository
-                .findByCartCartIdAndProductVariantProductVariantId(cart.getCartId(), productVariantId);
-
-        CartDetailEntity detail;
-        if (existingDetail.isPresent()) {
-            detail = existingDetail.get();
-            detail.setQuantity(detail.getQuantity() + quantity);
-            logger.debug("Updated quantity for cartDetailId: {} to {}", detail.getCartDetailId(), detail.getQuantity());
-        } else {
-            detail = new CartDetailEntity();
-            detail.setCart(cart);
-            detail.setProductVariant(productVariant);
-            detail.setQuantity(quantity);
-            cart.getDetails().add(detail);
-            logger.debug("Added new item to cart for productVariantId: {}", productVariantId);
-        }
-
-        cartDetailRepository.save(detail);
-        cartRepository.save(cart);
-
-        return getCartByUserId();
+    if (quantity <= 0) {
+        logger.error("Invalid quantity: {}", quantity);
+        throw new IllegalArgumentException("Quantity must be greater than 0");
     }
+
+    UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> {
+                logger.error("User not found for userId: {}", userId);
+                return new RuntimeException("User not found for userId: " + userId);
+            });
+
+    ProductVariantEntity productVariant = productVariantRepository.findById(productVariantId)
+            .orElseThrow(() -> {
+                logger.error("Product variant not found for productVariantId: {}", productVariantId);
+                return new RuntimeException("Product variant not found");
+            });
+
+    CartEntity cart = cartRepository.findByUserUserId(userId)
+            .orElseGet(() -> {
+                logger.info("Creating new cart for userId: {}", userId);
+                return createCartForUser(user);
+            });
+
+    Optional<CartDetailEntity> existingDetail = cartDetailRepository
+            .findByCartCartIdAndProductVariantProductVariantId(cart.getCartId(), productVariantId);
+
+    // ✅ Tính tổng số lượng sau khi cộng dồn
+    int totalQuantity = quantity;
+    if (existingDetail.isPresent()) {
+        totalQuantity += existingDetail.get().getQuantity();
+    }
+
+    // ✅ Kiểm tra tồn kho
+    if (productVariant.getStock() < totalQuantity) {
+        logger.error("Insufficient stock for productVariantId: {}, requested total: {}, available: {}",
+                productVariantId, totalQuantity, productVariant.getStock());
+        throw new RuntimeException("Số lượng vượt quá tồn kho. Hiện chỉ còn " + productVariant.getStock());
+    }
+
+    CartDetailEntity detail;
+    if (existingDetail.isPresent()) {
+        detail = existingDetail.get();
+        detail.setQuantity(detail.getQuantity() + quantity);
+        logger.debug("Updated quantity for cartDetailId: {} to {}", detail.getCartDetailId(), detail.getQuantity());
+    } else {
+        detail = new CartDetailEntity();
+        detail.setCart(cart);
+        detail.setProductVariant(productVariant);
+        detail.setQuantity(quantity);
+        cart.getDetails().add(detail);
+        logger.debug("Added new item to cart for productVariantId: {}", productVariantId);
+    }
+
+    cartDetailRepository.save(detail);
+    cartRepository.save(cart);
+
+    return getCartByUserId();
+}
 
     public CartDTO updateCartItem(Integer cartDetailId, Integer quantity) {
         Integer userId = getAuthenticatedUserId();

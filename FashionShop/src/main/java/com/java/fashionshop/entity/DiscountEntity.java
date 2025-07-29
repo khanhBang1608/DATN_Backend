@@ -2,7 +2,7 @@ package com.java.fashionshop.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -18,9 +18,6 @@ public class DiscountEntity {
     @Column(name = "discount_code", nullable = false, unique = true)
     private String discountCode;
 
-    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
-    private String description;
-
     @Column(name = "discount_percent", nullable = false)
     private Double discountPercent;
 
@@ -34,13 +31,11 @@ public class DiscountEntity {
     private Integer quantityLimit;
 
     @Column(name = "start_date")
-    private LocalDateTime startDate;
+    private LocalDate startDate; 
 
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;   
 
     private Boolean status;
 
-    @OneToMany(mappedBy = "discount")
-    private List<OrderEntity> orders;
 }

@@ -1,12 +1,18 @@
 package com.java.fashionshop.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomNumberEditor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,12 +27,19 @@ import com.java.fashionshop.bean.ProductBean;
 import com.java.fashionshop.bean.ProductVariantBean;
 import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.entity.SizesEntity;
+import com.java.fashionshop.jpa.JpaColors;
 import com.java.fashionshop.jpa.JpaProduct;
+import com.java.fashionshop.jpa.JpaProductVariant;
+import com.java.fashionshop.jpa.JpaSizes;
 import com.java.fashionshop.services.CategoryService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -44,6 +57,24 @@ public class ManageProductController {
 	 
 	 @Autowired
 	 private ProductVariantService productVariantService;
+	 
+	 @Autowired
+	 private JpaColors jpaColors;
+
+	 @Autowired
+	 private JpaSizes jpaSizes;
+	 @Autowired
+	 private JpaProductVariant jpaProductVariant;
+	 
+	 @GetMapping("/colors")
+	 public ResponseEntity<List<ColorsEntity>> getAllColors() {
+	     return ResponseEntity.ok(jpaColors.findAll());
+	 }
+
+	 @GetMapping("/sizes")
+	 public ResponseEntity<List<SizesEntity>> getAllSizes() {
+	     return ResponseEntity.ok(jpaSizes.findAll());
+	 }
 
 	
 	 @GetMapping("/products")
@@ -54,30 +85,58 @@ public class ManageProductController {
 	                      .toList();
 	 }
 	 
-	@PostMapping("/products")
-	public ResponseEntity<?> addProduct(@RequestBody ProductBean productBean) {
-	    try {
-	        ProductEntity saved = productService.save(productBean);
-	        return ResponseEntity.ok(convertToDTO(saved));
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	    }
-	}
+	 @GetMapping("/products/{id}")
+	 public ResponseEntity<?> getProductById(@PathVariable("id") Integer id) {
+	     ProductEntity product = productService.findEntityById(id);
+	     if (product == null) {
+	         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
+	     }
+	     return ResponseEntity.ok(convertToDTO(product));
+	 }
 
-	@PutMapping("/products/{id}")
-	public ResponseEntity<?> updateProduct(@PathVariable("id") Integer id, @RequestBody ProductBean productBean) {
-	    try {
-	        productBean.setProductId(id);
-	        ProductEntity updated = productService.save(productBean);
-	        return ResponseEntity.ok(convertToDTO(updated));
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	    }
-	}
+	 @PostMapping("/products")
+	 public ResponseEntity<?> addProduct(@Valid @RequestBody ProductBean productBean, BindingResult bindingResult) {
+	     if (bindingResult.hasErrors()) {
+	         // Trả về danh sách lỗi chi tiết
+	         String errors = bindingResult.getFieldErrors().stream()
+	                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	                 .reduce("", (a, b) -> a + "\n" + b);
+	         return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	     }
+
+	     try {
+	         ProductEntity saved = productService.save(productBean);
+	         return ResponseEntity.ok(convertToDTO(saved));
+	     } catch (IllegalArgumentException e) {
+	         return ResponseEntity.badRequest().body(e.getMessage());
+	     } catch (Exception e) {
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
+	     }
+	 }
+
+
+	 @PutMapping("/products/{id}")
+	 public ResponseEntity<?> updateProduct(@PathVariable("id") Integer id,
+	                                        @Valid @RequestBody ProductBean productBean,
+	                                        BindingResult bindingResult) {
+	     if (bindingResult.hasErrors()) {
+	         String errors = bindingResult.getFieldErrors().stream()
+	                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	                 .reduce("", (a, b) -> a + "\n" + b);
+	         return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	     }
+
+	     try {
+	         productBean.setProductId(id);
+	         ProductEntity updated = productService.save(productBean);
+	         return ResponseEntity.ok(convertToDTO(updated));
+	     } catch (IllegalArgumentException e) {
+	         return ResponseEntity.badRequest().body(e.getMessage());
+	     } catch (Exception e) {
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
+	     }
+	 }
+
 	
 	@GetMapping("/products/{productId}/variants")
 	public ResponseEntity<List<ProductVariantDTO>> getVariantsByProductId(@PathVariable Integer productId) {
@@ -98,7 +157,14 @@ public class ManageProductController {
 	}
 	
 	@PostMapping("/product-variants")
-	public ResponseEntity<?> addProductVariant(@ModelAttribute ProductVariantBean bean) {
+	public ResponseEntity<?> addProductVariant(@Valid @ModelAttribute ProductVariantBean bean, BindingResult bindingResult) {
+	    if (bindingResult.hasErrors()) {
+	        String errors = bindingResult.getFieldErrors().stream()
+	            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	            .reduce("", (a, b) -> a + "\n" + b);
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	    }
+
 	    try {
 	        ProductVariantEntity saved = productVariantService.save(bean);
 	        return ResponseEntity.ok(convertToDTO(saved));
@@ -110,33 +176,86 @@ public class ManageProductController {
 	}
 
 
-	@PutMapping("/product-variants/{id}")
-	public ResponseEntity<?> updateProductVariant(
-	        @PathVariable Integer id,
-	        @ModelAttribute ProductVariantBean bean
-	) {
+	@PutMapping("/product-variants/update/{variantId}")
+	public ResponseEntity<?> updateVariant(
+	        @PathVariable Integer variantId,
+	        @Valid @ModelAttribute ProductVariantBean bean,
+	        BindingResult bindingResult) {
+
+	    if (bindingResult.hasErrors()) {
+	        String errors = bindingResult.getFieldErrors().stream()
+	            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+	            .reduce("", (a, b) -> a + "\n" + b);
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu:\n" + errors);
+	    }
+
 	    try {
-	        ProductVariantEntity updated = productVariantService.update(id, bean);
-	        return ResponseEntity.ok(convertToDTO(updated));
+	        ProductVariantEntity updated = productVariantService.update(variantId, bean);
+	        return ResponseEntity.ok("Cập nhật biến thể thành công.");
 	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(e.getMessage());
+	        return ResponseEntity.badRequest().body("Lỗi dữ liệu: " + e.getMessage());
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Lỗi hệ thống: " + e.getMessage());
+	    }
+	}
+
+	
+	@DeleteMapping("/product-variants/{id}")
+	public ResponseEntity<?> deleteProductVariant(@PathVariable Integer id) {
+	    try {
+	        productVariantService.deleteById(id);
+	        return ResponseEntity.ok("Đã xóa thành công");
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 	    } catch (Exception e) {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
 	    }
 	}
 
+	public ProductDTO convertToDTO(ProductEntity product) {
+        ProductDTO dto = new ProductDTO();
+        dto.setProductId(product.getProductId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setStatus(product.getStatus());
+        dto.setDateCreated(product.getDateCreated());
 
-	private ProductDTO convertToDTO(ProductEntity product) {
-	    ProductDTO dto = new ProductDTO();
-	    dto.setProductId(product.getProductId());
-	    dto.setName(product.getName());
-	    dto.setStatus(product.getStatus());
-	    dto.setDateCreated(product.getDateCreated());
-	    dto.setDescription(product.getDescription());
-	    dto.setCategoryId(product.getCategory().getCategoryId());
-	    dto.setCategoryName(product.getCategory().getCategoryName());
-	    return dto;
-	}
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+        }
+
+        if (product.getVariants() != null) {
+            List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+                ProductVariantDTO variantDTO = new ProductVariantDTO();
+                variantDTO.setProductVariantId(variant.getProductVariantId());
+                variantDTO.setStock(variant.getStock());
+                variantDTO.setPrice(variant.getPrice());
+                variantDTO.setImageName(variant.getImageName());
+
+                if (variant.getColor() != null) {
+                    variantDTO.setColorId(variant.getColor().getColorId());
+                    variantDTO.setColorName(variant.getColor().getColorName());
+                }
+
+                if (variant.getSize() != null) {
+                    variantDTO.setSizeId(variant.getSize().getSizeId());
+                    variantDTO.setSizeName(variant.getSize().getSizeName());
+                }
+
+                return variantDTO;
+            }).toList();
+
+            dto.setVariants(variantDTOs);
+        } else {
+            // Nếu chưa có biến thể thì trả về danh sách rỗng
+            dto.setVariants(List.of());
+        }
+
+        return dto;
+    }
 	
 	private ProductVariantDTO convertToDTO(ProductVariantEntity variant) {
 	    ProductVariantDTO dto = new ProductVariantDTO();
@@ -160,5 +279,11 @@ public class ManageProductController {
 
 	    return dto;
 	}
+	
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+	    binder.registerCustomEditor(BigDecimal.class, new CustomNumberEditor(BigDecimal.class, true));
+	}
+
 
 }

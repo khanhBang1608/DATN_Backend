@@ -10,11 +10,13 @@ import com.java.fashionshop.entity.ProductVariantEntity;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
 
+import com.java.fashionshop.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
@@ -22,19 +24,28 @@ import java.util.List;
 public class ProductClientController {
 
     @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
     private ProductService productService;
 
     @Autowired
     private ProductVariantService productVariantService;
-
+    
+    @GetMapping("/products/top10")
+    public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
+        List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
+        return ResponseEntity.ok(dtos);
+    }
     // ✅ 1. Lấy toàn bộ sản phẩm cho trang danh sách
     @GetMapping("/products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductEntity> products = productService.getAllEntity();
-        List<ProductDTO> result = products.stream()
-                .map(productService::convertToDTO)  // tái sử dụng convertToDTO
-                .toList();
-        return ResponseEntity.ok(result);
+        List<ProductDTO> dtos = productService.getAllEntity().stream()
+            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+            .map(productService::convertToDTO)
+            .toList();
+
+        return ResponseEntity.ok(dtos);
     }
 
     // ✅ 2. Lấy chi tiết sản phẩm theo id
@@ -56,7 +67,17 @@ public class ProductClientController {
                 .toList();
         return ResponseEntity.ok(result);
     }
-    
+
+    @GetMapping("/variants/{variantId}/product-id")
+    public ResponseEntity<?> getProductIdByVariantId(@PathVariable Integer variantId) {
+        ProductVariantEntity variant = productVariantService.findEntityById(variantId);
+        if (variant == null || variant.getProduct() == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().body(Map.of("productId", variant.getProduct().getProductId()));
+    }
+
+
     @GetMapping("/products/{productId}/variant")
     public ResponseEntity<?> getVariantByColorAndSize(
             @PathVariable Integer productId,
@@ -79,19 +100,36 @@ public class ProductClientController {
         // Lấy các màu không trùng
         List<ColorsDTO> colors = variants.stream()
                 .filter(v -> v.getColor() != null)
-                .map(v -> new ColorsDTO(v.getColor().getColorId(), v.getColor().getColorName()))
+                .map(v -> new ColorsDTO())
                 .distinct()
                 .toList();
 
         // Lấy các size không trùng
         List<SizesDTO> sizes = variants.stream()
                 .filter(v -> v.getSize() != null)
-                .map(v -> new SizesDTO(v.getSize().getSizeId(), v.getSize().getSizeName()))
+                .map(v -> new SizesDTO())
                 .distinct()
                 .toList();
 
         ProductOptionsResponse response = new ProductOptionsResponse(colors, sizes);
         return ResponseEntity.ok(response);
+    }
+    
+ // ✅ 4. Lấy sản phẩm liên quan theo id danh mục (loại trừ sản phẩm hiện tại nếu cần)
+    @GetMapping("/products/related")
+    public ResponseEntity<List<ProductDTO>> getRelatedProducts(
+            @RequestParam Integer categoryId,
+            @RequestParam(required = false) Integer excludeProductId) {
+
+        List<ProductEntity> relatedProducts = productService.findByCategoryId(categoryId);
+
+        List<ProductDTO> result = relatedProducts.stream()
+                .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId)) // loại trừ sản phẩm hiện tại
+                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // có biến thể
+                .map(productService::convertToDTO)
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 
 
@@ -113,5 +151,17 @@ public class ProductClientController {
 
         dto.setImageName(variant.getImageName());
         return dto;
+    }
+    
+    @GetMapping("/products/search")
+    public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String keyword) {
+        List<ProductDTO> results = productService.searchProductsByName(keyword);
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/products/{productId}/average-rating")
+    public ResponseEntity<Double> getAverageRating(@PathVariable Integer productId) {
+        Double average = reviewService.getAverageRatingByProductId(productId);
+        return ResponseEntity.ok(average != null ? average : 0.0);
     }
 }

@@ -8,4 +8,6 @@ import com.java.fashionshop.entity.UserEntity;
 
 public interface JpaUser extends JpaRepository<UserEntity, Integer> {
 	Optional<UserEntity> findByEmail(String email);
+	long countByRole(Integer role);
+
 }

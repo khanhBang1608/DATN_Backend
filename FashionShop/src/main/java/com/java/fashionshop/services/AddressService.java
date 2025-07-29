@@ -86,7 +86,7 @@ public class AddressService {
 
 
     private AddressDTO convertToDTO(AddressEntity entity) {
-        return new AddressDTO(
+        AddressDTO dto = new AddressDTO(
                 entity.getAddressId(),
                 entity.getUser().getUserId(),
                 entity.getCustomerName(),
@@ -97,7 +97,17 @@ public class AddressService {
                 entity.getDistrictId(),
                 entity.getDistrictName(),
                 entity.getWardId(),
-                entity.getWardName()
+                entity.getWardName(),
+                null // fullAddress sẽ set sau
         );
+
+        String fullAddress = entity.getAddress() + ", " +
+                             entity.getWardName() + ", " +
+                             entity.getDistrictName() + ", " +
+                             entity.getProvinceName();
+
+        dto.setFullAddress(fullAddress);
+        return dto;
     }
+
 }

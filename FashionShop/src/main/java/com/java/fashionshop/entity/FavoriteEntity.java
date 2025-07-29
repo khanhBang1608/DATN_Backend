@@ -29,5 +29,10 @@ public class FavoriteEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
+
+	public Integer getId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
 

@@ -15,9 +15,6 @@ public class ProductPromotionDTO {
 
     private Integer productVariantId;
 
-    private String productVariantName;
+	private Integer promotionId;
 
-    private String color;
-
-    private String size;
 }
