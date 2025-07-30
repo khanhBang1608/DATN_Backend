@@ -12,6 +12,7 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
+import com.java.fashionshop.jpa.JpaOrderDetail;
 import com.java.fashionshop.jpa.JpaProductPromotion;
 import com.java.fashionshop.jpa.JpaProductVariant;
 import com.java.fashionshop.jpa.JpaUser;
@@ -48,6 +49,9 @@ public class OrderService {
     @Autowired
     private JpaProductPromotion productPromotionRepository;
 
+    @Autowired
+    private JpaOrderDetail jpaOrderDetail;
+    
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String email;
@@ -471,6 +475,10 @@ public class OrderService {
 
         order.setStatus(7);
         orderRepository.save(order);
+    }
+    public Long getTotalSoldQuantityByProductId(Integer productId) {
+        Long totalSold = jpaOrderDetail.getTotalSoldQuantityByProductId(productId);
+        return totalSold != null ? totalSold : 0L;
     }
 
 }

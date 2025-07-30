@@ -7,6 +7,7 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.dto.SizesDTO;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.services.OrderService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
 
@@ -31,6 +32,9 @@ public class ProductClientController {
 
     @Autowired
     private ProductVariantService productVariantService;
+    
+    @Autowired
+    private OrderService orderService;
     
     @GetMapping("/products/top10")
     public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
@@ -163,5 +167,15 @@ public class ProductClientController {
     public ResponseEntity<Double> getAverageRating(@PathVariable Integer productId) {
         Double average = reviewService.getAverageRatingByProductId(productId);
         return ResponseEntity.ok(average != null ? average : 0.0);
+    }
+    
+    @GetMapping("/products/{productId}/sold-count")
+    public ResponseEntity<?> getSoldCountByProductId(@PathVariable Integer productId) {
+        try {
+            Long soldCount = orderService.getTotalSoldQuantityByProductId(productId);
+            return ResponseEntity.ok().body(Map.of("soldCount", soldCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy số lượng đã bán"));
+        }
     }
 }
