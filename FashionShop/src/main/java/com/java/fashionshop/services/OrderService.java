@@ -74,7 +74,11 @@ public class OrderService {
         order.setAddress(request.getAddress());
         order.setPaymentMethod(request.getPaymentMethod());
         order.setStatus(0); // 0: Pending
-        order.setPaymentStatus(0); // 0: Unpaid
+        if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+            order.setPaymentStatus(1); // 1: Paid
+        } else {
+            order.setPaymentStatus(0); // 0: Unpaid
+        }
         order.setShippingFee(new BigDecimal("10000"));
         order.setDiscountAmount(BigDecimal.ZERO);
 
@@ -255,10 +259,12 @@ public class OrderService {
      // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3
         if (orderDTO.getStatus() == 3 && previousStatus != 3) {
             adjustStockForOrder(order, false);
+            order.setPaymentStatus(1);
         }
         // Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
         else if (previousStatus == 3 && orderDTO.getStatus() != 3) {
             adjustStockForOrder(order, true);
+            order.setPaymentStatus(0);
         }
         
         order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
@@ -449,6 +455,7 @@ public class OrderService {
         }
 
         order.setStatus(6);
+        order.setPaymentStatus(0); 
         adjustStockForOrder(order, true);
         orderRepository.save(order);
     }

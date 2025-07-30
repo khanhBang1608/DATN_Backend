@@ -10,9 +10,9 @@ public class PaymentConfig {
 
     public static String vnp_Returnurl = "http://localhost:8080/api/public/paymentSuccess";
 
-    public static String vnp_TmnCode = "AAH1TZ9O";
+    public static String vnp_TmnCode = "VR529C4D";
 
-    public static String vnp_HashSecret = "NVLG2VAOC7UT8DXQF9U059KW32IZPU9K";
+    public static String vnp_HashSecret = "Q6MJ0P2LIPX5AV0HJO72G9JKO8RAFJXW";
 
     public static String vnp_apiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
 
