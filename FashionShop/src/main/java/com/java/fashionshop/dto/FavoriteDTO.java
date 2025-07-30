@@ -8,10 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FavoriteDTO {
-	private Integer id;
+    private Integer id;
     private Integer productId;
     private String productName;
-    private String image;
-    private Integer price;
-    private String description;
+    private String imageName;
 }

@@ -29,7 +29,7 @@ public class PaymentController {
     }
 
     // ✅ PUBLIC - VNPAY redirect về đây, không yêu cầu JWT
-    @GetMapping("/paymentSuccess")
+    @GetMapping("/api/public/paymentSuccess")
     public String paymentSuccess(@RequestParam Map<String, String> params, Model model) {
         String vnp_SecureHash = params.remove("vnp_SecureHash");
 
@@ -40,13 +40,17 @@ public class PaymentController {
 
         String computedHash = PaymentConfig.hmacSHA512(PaymentConfig.vnp_HashSecret, hashData);
 
-        if (computedHash.equals(vnp_SecureHash)) {
-            model.addAttribute("message", "Thanh toán thành công!");
-        } else {
-            model.addAttribute("message", "Thanh toán thất bại hoặc bị thay đổi dữ liệu!");
-        }
+        String redirectUrl = "http://localhost:5173/payment-success";
 
-        // ✅ Redirect về frontend thay vì trả view nếu dùng Vue.js
-        return "redirect:http://localhost:5173/payment-success"; // hoặc truyền thêm query: ?status=success
+        if (computedHash.equals(vnp_SecureHash)) {
+            // Gửi lại toàn bộ params về FE
+            String queryString = params.entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue())
+                    .collect(Collectors.joining("&"));
+            return "redirect:" + redirectUrl + "?" + queryString;
+        } else {
+            return "redirect:" + redirectUrl + "?vnp_TransactionStatus=fail";
+        }
     }
+
 }

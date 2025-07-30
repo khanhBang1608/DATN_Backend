@@ -38,7 +38,7 @@ public class ManageDashboardController {
         long totalProducts = jpaProduct.count();
         long totalOrders = jpaOrder.count();
         long totalReviews = jpaReview.count();
-        BigDecimal totalRevenue = jpaOrder.getTotalRevenueFromVNPayOrVNPayPending();
+        BigDecimal totalRevenue = jpaOrder.getTotalRevenueWithPaymentStatus1();
 
         return new DashboardStatsDTO(
         		userCount,
