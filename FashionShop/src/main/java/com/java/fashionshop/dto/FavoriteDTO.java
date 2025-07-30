@@ -1,15 +1,17 @@
 package com.java.fashionshop.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class FavoriteDTO {
     private Integer id;
-    private Integer productId;
-    private String productName;
-    private String imageName;
+    private ProductDTO product;
+
+    public FavoriteDTO() {
+    }
+
+    public FavoriteDTO(Integer id, ProductDTO product) {
+        this.id = id;
+        this.product = product;
+    }
 }
