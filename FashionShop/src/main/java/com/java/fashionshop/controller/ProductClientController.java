@@ -45,7 +45,6 @@ public class ProductClientController {
         List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
         return ResponseEntity.ok(dtos);
     }
-    // ✅ 1. Lấy toàn bộ sản phẩm cho trang danh sách
     @GetMapping("/products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         List<ProductDTO> dtos = productService.getAllEntity().stream()
@@ -56,7 +55,6 @@ public class ProductClientController {
         return ResponseEntity.ok(dtos);
     }
 
-    // ✅ 2. Lấy chi tiết sản phẩm theo id
     @GetMapping("/products/{id}")
     public ResponseEntity<?> getProductDetail(@PathVariable Integer id) {
         ProductEntity entity = productService.findEntityById(id);
@@ -66,7 +64,6 @@ public class ProductClientController {
         return ResponseEntity.ok(productService.convertToDTO(entity));  // tái sử dụng convertToDTO
     }
 
-    // ✅ 3. Lấy danh sách biến thể theo sản phẩm
     @GetMapping("/products/{id}/variants")
     public ResponseEntity<List<ProductVariantDTO>> getVariants(@PathVariable Integer id) {
         List<ProductVariantEntity> variants = productVariantService.findEntityByProductId(id);
