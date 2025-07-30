@@ -94,4 +94,9 @@ public class FavoriteService {
         ProductDTO productDTO = productService.convertToDTO(fav.getProduct());
         return new FavoriteDTO(fav.getFavoriteId(), productDTO);
     }
+    
+    public Long getFavoriteCountByProductId(Integer productId) {
+        return jpaFavorite.countByProductId(productId);
+    }
+
 }

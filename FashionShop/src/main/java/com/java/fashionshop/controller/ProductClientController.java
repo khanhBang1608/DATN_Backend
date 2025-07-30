@@ -7,6 +7,7 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.dto.SizesDTO;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.services.FavoriteService;
 import com.java.fashionshop.services.OrderService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
@@ -35,6 +36,9 @@ public class ProductClientController {
     
     @Autowired
     private OrderService orderService;
+    
+    @Autowired
+    private FavoriteService favoriteService;
     
     @GetMapping("/products/top10")
     public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
@@ -178,4 +182,15 @@ public class ProductClientController {
             return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy số lượng đã bán"));
         }
     }
+    
+    @GetMapping("/products/{productId}/favorite-count")
+    public ResponseEntity<?> getFavoriteCount(@PathVariable Integer productId) {
+        try {
+            Long count = favoriteService.getFavoriteCountByProductId(productId);
+            return ResponseEntity.ok(Map.of("favoriteCount", count));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy lượt yêu thích"));
+        }
+    }
+
 }
