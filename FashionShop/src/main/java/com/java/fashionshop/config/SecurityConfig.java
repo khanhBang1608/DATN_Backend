@@ -22,86 +22,88 @@ import com.java.fashionshop.component.JwtFilter;
 import com.java.fashionshop.services.CustomOAuth2UserService;
 import com.java.fashionshop.services.CustomUserDetailsService;
 
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
+    @Configuration
+    @EnableWebSecurity
+    public class SecurityConfig {
 
-    private final JwtFilter jwtRequestFilter;
-    private final CustomUserDetailsService customUserDetailsService;
+        private final JwtFilter jwtRequestFilter;
+        private final CustomUserDetailsService customUserDetailsService;
 
-    public SecurityConfig(JwtFilter jwtRequestFilter,
-            CustomUserDetailsService customUserDetailsService) {
-        this.jwtRequestFilter = jwtRequestFilter;
-        this.customUserDetailsService = customUserDetailsService;
+        public SecurityConfig(JwtFilter jwtRequestFilter,
+                CustomUserDetailsService customUserDetailsService) {
+            this.jwtRequestFilter = jwtRequestFilter;
+            this.customUserDetailsService = customUserDetailsService;
+        }
+
+        // ✅ Inject CustomOAuth2UserService qua tham số method để tránh circular dependency
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
+            http.cors().and().csrf().disable()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/",
+                                "/api/login",
+                                "/css/**",
+                                "/js/**",
+                                "/api/forgot-password",         // 👈 THÊM DÒNG NÀY
+                                "/api/verify-otp",              // 👈 THÊM DÒNG NÀY
+                                "/api/reset-password",          // 👈 THÊM DÒNG NÀY
+                                "/api/register/**",         // 👈 Đăng ký, OTP
+                                "/api/public/**",           // 👈 Nếu bạn chia API public riêng
+                                "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
+                                "/api/products/**",
+                                "/api/user/cart/**",
+                                "/api/user/reviews/**",
+                                "/api/user/address/**",
+                                "/api/user/orders/**",
+                                "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
+                            ).permitAll()
+                    .requestMatchers("/images/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/address/").hasAnyRole("USER","ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
+                    .requestMatchers("/images/**").permitAll()
+
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/user/**").hasRole("USER")
+                    .anyRequest().authenticated()
+                )
+                .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll());
+
+            http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
+            return http.build();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+            return http.getSharedObject(AuthenticationManagerBuilder.class)
+                       .authenticationProvider(daoAuthenticationProvider())
+                       .build();
+        }
+
+        @Bean
+        public DaoAuthenticationProvider daoAuthenticationProvider() {
+            DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+            provider.setUserDetailsService(customUserDetailsService);
+            provider.setPasswordEncoder(passwordEncoder());
+            return provider;
+        }
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+            config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
+            config.setAllowCredentials(true);
+
+            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+            source.registerCorsConfiguration("/**", config);
+            return source;
+        }
     }
-
-    // ✅ Inject CustomOAuth2UserService qua tham số method để tránh circular dependency
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService) throws Exception {
-        http.cors().and().csrf().disable()
-            .authorizeHttpRequests(auth -> auth
-            		.requestMatchers(
-            			    "/",
-            			    "/api/login",
-            			    "/css/**",
-            			    "/js/**",
-            			    "/api/forgot-password",         // 👈 THÊM DÒNG NÀY
-            		        "/api/verify-otp",              // 👈 THÊM DÒNG NÀY
-            		        "/api/reset-password",          // 👈 THÊM DÒNG NÀY
-            			    "/api/register/**",         // 👈 Đăng ký, OTP
-            			    "/api/public/**",           // 👈 Nếu bạn chia API public riêng
-            			    "/api/categories",          // 👈 Nếu bạn đang test API GET danh mục chung
-            			    "/api/products/**",
-                            "/api/user/cart/**",
-                            "/api/user/reviews/**",
-                            "/api/user/orders/**",
-                            "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
-            			).permitAll()
-              	.requestMatchers("/images/**").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
-            	.requestMatchers("/images/**").permitAll()
-
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasRole("USER")
-                .anyRequest().authenticated()
-            )
-            .logout(logout -> logout.logoutSuccessUrl("/login?logout").permitAll());
-
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class)
-                   .authenticationProvider(daoAuthenticationProvider())
-                   .build();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider daoAuthenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
-}
