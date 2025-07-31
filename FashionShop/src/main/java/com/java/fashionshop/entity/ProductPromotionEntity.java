@@ -21,7 +21,7 @@ public class ProductPromotionEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private Integer quantityLimit;
+//    private Integer quantityLimit;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promotions_id", nullable = false)

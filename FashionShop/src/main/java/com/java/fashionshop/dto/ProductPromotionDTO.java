@@ -11,10 +11,11 @@ public class ProductPromotionDTO {
 
     private Integer id;
 
-    private Integer quantityLimit;
-
     private Integer productVariantId;
 
 	private Integer promotionId;
 
+	private ProductVariantDTO productVariant;
+	
+	private Double discountedPrice;
 }

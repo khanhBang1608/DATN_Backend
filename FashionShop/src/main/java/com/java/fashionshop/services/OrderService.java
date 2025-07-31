@@ -45,9 +45,6 @@ public class OrderService {
 
     @Autowired
     private JpaProductVariant productVariantRepository;
-    
-    @Autowired
-    private JpaProductPromotion productPromotionRepository;
 
     @Autowired
     private JpaOrderDetail jpaOrderDetail;
@@ -247,17 +244,6 @@ public class OrderService {
 
         if (orderDTO.getStatus() == 1 && previousStatus != 1) {
             adjustStockForOrder(order, false);
-
-            for (OrderDetailEntity detail : order.getOrderDetails()) {
-                List<ProductPromotionEntity> promos = productPromotionRepository
-                        .findByProductVariant_ProductVariantId(detail.getProductVariant().getProductVariantId());
-                for (ProductPromotionEntity promo : promos) {
-                    if (promo.getQuantityLimit() != null && promo.getQuantityLimit() >= detail.getQuantity()) {
-                        promo.setQuantityLimit(promo.getQuantityLimit() - detail.getQuantity());
-                        productPromotionRepository.save(promo);
-                    }
-                }
-            }
         }
         
      // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3

@@ -34,11 +34,6 @@ public class ProductPromotionService {
 
     @Autowired
     private JpaProductVariant JpaProductVariant;
-    
-    @Autowired
-    private JpaProduct jpaProduct;
-
-    
 
     public List<ProductVariantDTO> getVariantsByProductId(Integer productId) {
         List<ProductVariantEntity> variants = JpaProductVariant.findByProduct_ProductId(productId);
@@ -101,7 +96,7 @@ public class ProductPromotionService {
         ProductPromotionEntity entity = new ProductPromotionEntity();
         entity.setPromotion(promotion);
         entity.setProductVariant(variant);
-        entity.setQuantityLimit(bean.getQuantityLimit());
+//        entity.setQuantityLimit(bean.getQuantityLimit());
 
         result.add(convertToDTO(productPromotionRepo.save(entity)));
     }
@@ -119,7 +114,7 @@ public class ProductPromotionService {
         if (isOverlappingPromotion(bean.getProductVariantId(), bean.getPromotionId(), promotion.getStartDate(), promotion.getEndDate())) {
             return null;
         }
-        entity.setQuantityLimit(bean.getQuantityLimit());
+//        entity.setQuantityLimit(bean.getQuantityLimit());
         entity.setPromotion(promotion);
         entity.setProductVariant(variant);
 
@@ -134,9 +129,33 @@ public class ProductPromotionService {
     public ProductPromotionDTO convertToDTO(ProductPromotionEntity entity) {
         ProductPromotionDTO dto = new ProductPromotionDTO();
         dto.setId(entity.getId());
-        dto.setQuantityLimit(entity.getQuantityLimit());
         dto.setProductVariantId(entity.getProductVariant().getProductVariantId());
-        dto.setPromotionId(entity.getPromotion().getId()); 
+        dto.setPromotionId(entity.getPromotion().getId());
+
+        // Convert đầy đủ thông tin productVariant
+        ProductVariantEntity variant = entity.getProductVariant();
+        ProductVariantDTO variantDTO = new ProductVariantDTO();
+        variantDTO.setProductVariantId(variant.getProductVariantId());
+        variantDTO.setStock(variant.getStock());
+        variantDTO.setPrice(variant.getPrice());
+        variantDTO.setImageName(variant.getImageName());
+
+        if (variant.getColor() != null) {
+            variantDTO.setColorId(variant.getColor().getColorId());
+            variantDTO.setColorName(variant.getColor().getColorName());
+        }
+
+        if (variant.getSize() != null) {
+            variantDTO.setSizeId(variant.getSize().getSizeId());
+            variantDTO.setSizeName(variant.getSize().getSizeName());
+        }
+
+        dto.setProductVariant(variantDTO); // Gán đầy đủ vào DTO cha
+
+        Double originalPrice = variant.getPrice().doubleValue();
+        Double discountPercent = entity.getPromotion().getDiscountAmount();
+        Double discountedPrice = originalPrice * (1 - discountPercent / 100);
+        dto.setDiscountedPrice(discountedPrice);
         return dto;
     }
   
