@@ -260,11 +260,6 @@ public class OrderService {
             }
         }
         
-     // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3
-        if (orderDTO.getStatus() == 3 && previousStatus != 3) {
-            adjustStockForOrder(order, false);
-            order.setPaymentStatus(1);
-        }
         // Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
         else if (previousStatus == 3 && orderDTO.getStatus() != 3) {
             adjustStockForOrder(order, true);
