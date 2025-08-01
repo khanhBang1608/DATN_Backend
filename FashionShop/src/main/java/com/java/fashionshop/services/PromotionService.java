@@ -37,7 +37,7 @@ public class PromotionService {
                     ProductPromotionDTO ppDto = new ProductPromotionDTO();
                     ppDto.setId(pp.getId());
                     ppDto.setProductVariantId(pp.getProductVariant().getProductVariantId());
-                    ppDto.setQuantityLimit(pp.getQuantityLimit());
+//                    ppDto.setQuantityLimit(pp.getQuantityLimit());
                     return ppDto;
                 }).collect(Collectors.toList());
                 dto.setProductPromotions(ppDtos);
@@ -107,7 +107,7 @@ public class PromotionService {
         	    ? entity.getProductPromotions().stream().map(p -> {
         	        ProductPromotionDTO pd = new ProductPromotionDTO();
         	        pd.setId(p.getId());
-        	        pd.setQuantityLimit(p.getQuantityLimit());
+//        	        pd.setQuantityLimit(p.getQuantityLimit());
         	        if (p.getProductVariant() != null) {
         	            pd.setProductVariantId(p.getProductVariant().getProductVariantId());
         	        }

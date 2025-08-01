@@ -12,9 +12,9 @@ public class ProductPromotionBean {
 
     private Integer id;
 
-    @NotNull(message = "Số lượng giới hạn không được để trống")
-    @Positive(message = "Số lượng giới hạn phải lớn hơn 0")
-    private Integer quantityLimit;
+//    @NotNull(message = "Số lượng giới hạn không được để trống")
+//    @Positive(message = "Số lượng giới hạn phải lớn hơn 0")
+//    private Integer quantityLimit;
 
     @NotNull(message = "Mã khuyến mãi không được để trống")
     private Integer promotionId;
