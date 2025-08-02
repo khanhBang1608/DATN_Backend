@@ -10,8 +10,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.java.fashionshop.dto.AddressDTO;
 import com.java.fashionshop.dto.UserDTO;
 import com.java.fashionshop.entity.UserEntity;
+import com.java.fashionshop.services.AddressService;
 import com.java.fashionshop.services.UserService;
 
 @RestController
@@ -21,6 +23,9 @@ public class ManageUserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private AddressService addressService;
 
     // ✅ API lấy danh sách tất cả người dùng (trừ role = 0 nếu đúng như bạn filter)
     @GetMapping
@@ -64,6 +69,12 @@ public class ManageUserController {
         public void setStatus(boolean status) {
             this.status = status;
         }
+    }
+
+    @GetMapping("/{userId}/addresses")
+    public ResponseEntity<?> getUserAddresses(@PathVariable Integer userId) {
+        List<AddressDTO> addresses = addressService.getAddressesByUserId(userId);
+        return ResponseEntity.ok(addresses);
     }
 
 

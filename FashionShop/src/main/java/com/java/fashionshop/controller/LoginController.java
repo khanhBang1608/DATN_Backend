@@ -71,8 +71,8 @@ public class LoginController {
 
 				return ResponseEntity.ok(new LoginResponseDTO(token, userDTO));
 			} else {
-				return ResponseEntity.badRequest().body("Đăng nhập không thành công.!");
+				return ResponseEntity.badRequest().body("Email hoặc mật khẩu không đúng.");
 			}
-		}).orElse(ResponseEntity.badRequest().body("Đăng nhập không thành công.!"));
+		}).orElse(ResponseEntity.badRequest().body("Email hoặc mật khẩu không đúng."));
 	}
 }
