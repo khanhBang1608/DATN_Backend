@@ -80,7 +80,7 @@ public class OrderService {
         } else {
             order.setPaymentStatus(0); // 0: Unpaid
         }
-        order.setShippingFee(new BigDecimal("10000"));
+        order.setShippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO);
         order.setDiscountAmount(BigDecimal.ZERO);
 
         if (request.getDiscountCode() != null) {
