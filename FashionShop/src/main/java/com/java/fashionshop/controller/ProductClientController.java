@@ -45,10 +45,18 @@ public class ProductClientController {
     private FavoriteService favoriteService;
     
     @GetMapping("/products/top10")
-    public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
-        List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<?> getTopNewestProductsWithVariants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductEntity> products = productService.findTopNewestProductsWithVariants(pageable);
+
+        Page<ProductDTO> result = products.map(productService::convertToDTO);
+
+        return ResponseEntity.ok(result);
     }
+
     
     @GetMapping("/products")
     public ResponseEntity<?> getAllProducts(

@@ -162,11 +162,8 @@ public class ProductService {
 		return dto;
 	}
 
-	// Lấy top 10 sản phẩm mới nhất
-	public List<ProductDTO> getTop10NewestProductsWithVariants() {
-		Pageable pageable = PageRequest.of(0, 10);
-		List<ProductEntity> products = jpaProduct.findTop10ByOrderByDateCreatedDesc(pageable);
-		return products.stream().map(this::convertToDTO).collect(Collectors.toList());
+	public Page<ProductEntity> findTopNewestProductsWithVariants(Pageable pageable) {
+	    return jpaProduct.findAllByStatusTrueOrderByDateCreatedDesc(pageable);
 	}
 
 	// Tìm sản phẩm theo danh mục
