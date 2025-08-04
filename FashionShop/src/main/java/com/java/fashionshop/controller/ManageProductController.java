@@ -19,9 +19,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 
 import com.java.fashionshop.bean.ProductBean;
 import com.java.fashionshop.bean.ProductVariantBean;
@@ -78,12 +82,25 @@ public class ManageProductController {
 
 	
 	 @GetMapping("/products")
-	 public List<ProductDTO> getAllProduct() {
-	     return jpaProduct.findAll()
-	                      .stream()
-	                      .map(this::convertToDTO)
-	                      .toList();
+	 public ResponseEntity<?> getAllProductsPaged(
+	         @RequestParam(defaultValue = "0") int page,
+	         @RequestParam(defaultValue = "10") int size
+	 ) {
+	     Pageable pageable = PageRequest.of(page, size, Sort.by("dateCreated").descending());
+	     Page<ProductEntity> productPage = jpaProduct.findAll(pageable);
+
+	     List<ProductDTO> productDTOs = productPage.getContent().stream()
+	             .map(this::convertToDTO)
+	             .toList();
+
+	     return ResponseEntity.ok(new java.util.HashMap<String, Object>() {{
+	         put("products", productDTOs);
+	         put("totalPages", productPage.getTotalPages());
+	         put("totalElements", productPage.getTotalElements());
+	         put("currentPage", productPage.getNumber());
+	     }});
 	 }
+
 	 
 	 @GetMapping("/products/{id}")
 	 public ResponseEntity<?> getProductById(@PathVariable("id") Integer id) {

@@ -143,23 +143,18 @@ public class ProductClientController {
         return ResponseEntity.ok(response);
     }
     
- // ✅ 4. Lấy sản phẩm liên quan theo id danh mục (loại trừ sản phẩm hiện tại nếu cần)
     @GetMapping("/products/related")
-    public ResponseEntity<List<ProductDTO>> getRelatedProducts(
+    public ResponseEntity<Page<ProductDTO>> getRelatedProducts(
             @RequestParam Integer categoryId,
-            @RequestParam(required = false) Integer excludeProductId) {
+            @RequestParam(required = false) Integer excludeProductId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
 
-        List<ProductEntity> relatedProducts = productService.findByCategoryId(categoryId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDTO> pagedResult = productService.getRelatedProducts(categoryId, excludeProductId, pageable);
 
-        List<ProductDTO> result = relatedProducts.stream()
-                .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId)) // loại trừ sản phẩm hiện tại
-                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // có biến thể
-                .map(productService::convertToDTO)
-                .toList();
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(pagedResult);
     }
-
 
     private ProductVariantDTO convertToVariantDTO(ProductVariantEntity variant) {
         ProductVariantDTO dto = new ProductVariantDTO();
