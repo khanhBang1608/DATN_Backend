@@ -178,4 +178,23 @@ public class ProductService {
 				.map(this::convertToDTO).collect(Collectors.toList());
 	}
 
+	public Page<ProductDTO> getRelatedProducts(Integer categoryId, Integer excludeProductId, Pageable pageable) {
+	    List<ProductEntity> relatedProducts = findByCategoryId(categoryId);
+
+	    List<ProductDTO> filtered = relatedProducts.stream()
+	            .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId))
+	            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+	            .map(this::convertToDTO)
+	            .toList();
+
+	    // Tính chỉ mục bắt đầu và kết thúc theo page
+	    int start = (int) pageable.getOffset();
+	    int end = Math.min(start + pageable.getPageSize(), filtered.size());
+
+	    List<ProductDTO> paginatedList = (start <= end) ? filtered.subList(start, end) : List.of();
+
+	    return new PageImpl<>(paginatedList, pageable, filtered.size());
+	}
+
+
 }
