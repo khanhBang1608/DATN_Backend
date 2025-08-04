@@ -16,6 +16,10 @@ import com.java.fashionshop.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.util.List;
 import java.util.Map;
@@ -41,19 +45,38 @@ public class ProductClientController {
     private FavoriteService favoriteService;
     
     @GetMapping("/products/top10")
-    public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
-        List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
-        return ResponseEntity.ok(dtos);
-    }
-    @GetMapping("/products")
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductDTO> dtos = productService.getAllEntity().stream()
-            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
-            .map(productService::convertToDTO)
-            .toList();
+    public ResponseEntity<?> getTopNewestProductsWithVariants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        return ResponseEntity.ok(dtos);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductEntity> products = productService.findTopNewestProductsWithVariants(pageable);
+
+        Page<ProductDTO> result = products.map(productService::convertToDTO);
+
+        return ResponseEntity.ok(result);
     }
+
+    
+    @GetMapping("/products")
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+
+        if (page != null && size != null) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductDTO> pagedResult = productService.getPaginatedProducts(pageable);
+            return ResponseEntity.ok(pagedResult);
+        } else {
+            List<ProductDTO> dtos = productService.getAllEntity().stream()
+                    .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+                    .map(productService::convertToDTO)
+                    .toList();
+
+            return ResponseEntity.ok(dtos);
+        }
+    }
+
 
     @GetMapping("/products/{id}")
     public ResponseEntity<?> getProductDetail(@PathVariable Integer id) {
@@ -120,23 +143,18 @@ public class ProductClientController {
         return ResponseEntity.ok(response);
     }
     
- // ✅ 4. Lấy sản phẩm liên quan theo id danh mục (loại trừ sản phẩm hiện tại nếu cần)
     @GetMapping("/products/related")
-    public ResponseEntity<List<ProductDTO>> getRelatedProducts(
+    public ResponseEntity<Page<ProductDTO>> getRelatedProducts(
             @RequestParam Integer categoryId,
-            @RequestParam(required = false) Integer excludeProductId) {
+            @RequestParam(required = false) Integer excludeProductId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
 
-        List<ProductEntity> relatedProducts = productService.findByCategoryId(categoryId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDTO> pagedResult = productService.getRelatedProducts(categoryId, excludeProductId, pageable);
 
-        List<ProductDTO> result = relatedProducts.stream()
-                .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId)) // loại trừ sản phẩm hiện tại
-                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // có biến thể
-                .map(productService::convertToDTO)
-                .toList();
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(pagedResult);
     }
-
 
     private ProductVariantDTO convertToVariantDTO(ProductVariantEntity variant) {
         ProductVariantDTO dto = new ProductVariantDTO();

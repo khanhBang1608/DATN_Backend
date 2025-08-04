@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.java.fashionshop.entity.UserEntity;
-import org.hibernate.query.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.java.fashionshop.entity.OrderEntity;
 
@@ -24,13 +25,15 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 		       "WHERE o.status = 3 OR (LOWER(o.paymentMethod) = 'vnpay' AND o.status <> 3) " +
 		       "GROUP BY FUNCTION('MONTH', o.orderDate)")
 		List<Map<String, Object>> getMonthlyRevenue();
-	@Query("SELECT p, SUM(od.quantity) as totalSold " +
-	           "FROM OrderEntity o " +
-	           "JOIN o.orderDetails od " +
-	           "JOIN od.productVariant pv " +
-	           "JOIN pv.product p " +
-	           "WHERE o.status = 3 " +
-	           "GROUP BY p " +
-	           "ORDER BY totalSold DESC")
-	    List<Object[]> findTop50BestSellingProducts();
+	@Query("""
+		    SELECT p, SUM(od.quantity) as totalSold
+		    FROM OrderEntity o
+		    JOIN o.orderDetails od
+		    JOIN od.productVariant pv
+		    JOIN pv.product p
+		    WHERE o.status = 3
+		    GROUP BY p
+		    ORDER BY totalSold DESC
+		""")
+		Page<Object[]> findBestSellingProducts(Pageable pageable);
 }

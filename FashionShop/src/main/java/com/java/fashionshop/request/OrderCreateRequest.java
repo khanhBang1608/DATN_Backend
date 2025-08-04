@@ -15,6 +15,8 @@ public class OrderCreateRequest {
     private String discountCode;
     
     private BigDecimal discountAmount;
+    
+    private BigDecimal ShippingFee;
 
     private List<OrderDetailRequest> orderDetails;
     private Integer status;
