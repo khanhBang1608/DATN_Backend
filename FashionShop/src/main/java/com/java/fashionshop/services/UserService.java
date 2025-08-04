@@ -8,6 +8,10 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.java.fashionshop.bean.RegisterBean;
 import com.java.fashionshop.entity.UserEntity;
@@ -82,6 +86,11 @@ public class UserService {
         return users.stream()
                     .filter(user -> user.getRole() != 0)
                     .collect(Collectors.toList());
+    }
+    
+    public Page<UserEntity> findUsersPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userJPA.findByRoleNot(0, pageable); // Loại bỏ role = 0
     }
 
     public UserEntity updateUserStatus(Integer userId, boolean status) {

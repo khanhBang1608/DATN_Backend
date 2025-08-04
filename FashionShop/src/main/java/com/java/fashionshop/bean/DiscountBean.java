@@ -36,7 +36,6 @@ public class DiscountBean {
     private Integer quantityLimit;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
-    @FutureOrPresent(message = "Ngày bắt đầu phải là hiện tại hoặc tương lai")
     private LocalDate startDate;
 
     @NotNull(message = "Ngày kết thúc không được để trống")
