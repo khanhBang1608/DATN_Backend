@@ -467,4 +467,24 @@ public class OrderService {
         return totalSold != null ? totalSold : 0L;
     }
 
+    @Transactional
+    public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
+        UserEntity user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
+
+        OrderEntity order = new OrderEntity();
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
+        order.setAddress("Địa chỉ mặc định");
+        order.setPaymentMethod("VNPAY");
+        order.setStatus(0); // Pending
+        order.setPaymentStatus(1); // Đã thanh toán
+        order.setShippingFee(BigDecimal.valueOf(10000));
+        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+
+        return orderRepository.save(order);
+    }
+
+
 }
