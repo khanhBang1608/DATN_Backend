@@ -13,7 +13,6 @@ import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
 import com.java.fashionshop.jpa.JpaOrderDetail;
-import com.java.fashionshop.jpa.JpaProductPromotion;
 import com.java.fashionshop.jpa.JpaProductVariant;
 import com.java.fashionshop.jpa.JpaUser;
 import com.java.fashionshop.request.OrderCreateRequest;
@@ -23,6 +22,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -376,9 +377,9 @@ public class OrderService {
             throw new RuntimeException("Lỗi tạo PDF", e);
         }
     }
-    public List<ProductDTO> getTop50BestSellingProducts() {
-        List<Object[]> results = orderRepository.findTop50BestSellingProducts();
-        return results.stream().limit(50).map(result -> {
+    public Page<ProductDTO> getBestSellingProducts(Pageable pageable) {
+        Page<Object[]> results = orderRepository.findBestSellingProducts(pageable);
+        return results.map(result -> {
             ProductEntity product = (ProductEntity) result[0];
             Long totalSold = (Long) result[1];
 
@@ -390,7 +391,7 @@ public class OrderService {
             dto.setStatus(product.getStatus());
             dto.setCategoryId(product.getCategory().getCategoryId());
             dto.setCategoryName(product.getCategory().getCategoryName());
-            dto.setViewCount(totalSold.intValue()); // Tạm dùng viewCount để lưu totalSold
+            dto.setViewCount(totalSold.intValue()); // tạm dùng viewCount làm totalSold
 
             List<ProductVariantDTO> variants = product.getVariants().stream()
                 .map(v -> {
@@ -406,10 +407,10 @@ public class OrderService {
                     return variantDTO;
                 })
                 .collect(Collectors.toList());
-            dto.setVariants(variants);
 
+            dto.setVariants(variants);
             return dto;
-        }).collect(Collectors.toList());
+        });
     }
 
     @Transactional
