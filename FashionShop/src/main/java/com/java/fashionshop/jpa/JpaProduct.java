@@ -23,4 +23,6 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 		)
 		List<ProductEntity> searchByName(@Param("keyword") String keyword);
 	Page<ProductEntity> findAllByStatusTrueOrderByDateCreatedDesc(Pageable pageable);
+	Page<ProductEntity> findAll(Pageable pageable);
+
 }
