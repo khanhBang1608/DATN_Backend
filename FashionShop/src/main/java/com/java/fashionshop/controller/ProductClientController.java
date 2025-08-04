@@ -16,6 +16,10 @@ import com.java.fashionshop.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.util.List;
 import java.util.Map;
@@ -45,15 +49,26 @@ public class ProductClientController {
         List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
         return ResponseEntity.ok(dtos);
     }
+    
     @GetMapping("/products")
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductDTO> dtos = productService.getAllEntity().stream()
-            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
-            .map(productService::convertToDTO)
-            .toList();
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        return ResponseEntity.ok(dtos);
+        if (page != null && size != null) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductDTO> pagedResult = productService.getPaginatedProducts(pageable);
+            return ResponseEntity.ok(pagedResult);
+        } else {
+            List<ProductDTO> dtos = productService.getAllEntity().stream()
+                    .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+                    .map(productService::convertToDTO)
+                    .toList();
+
+            return ResponseEntity.ok(dtos);
+        }
     }
+
 
     @GetMapping("/products/{id}")
     public ResponseEntity<?> getProductDetail(@PathVariable Integer id) {
