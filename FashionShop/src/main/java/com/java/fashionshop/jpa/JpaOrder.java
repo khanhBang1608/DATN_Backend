@@ -1,8 +1,10 @@
 package com.java.fashionshop.jpa;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.java.fashionshop.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.java.fashionshop.entity.OrderEntity;
+import org.springframework.data.repository.query.Param;
 
 public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 	List<OrderEntity> findByUser(UserEntity user);
@@ -36,4 +39,8 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 		    ORDER BY totalSold DESC
 		""")
 		Page<Object[]> findBestSellingProducts(Pageable pageable);
+
+	@Query("SELECT o FROM OrderEntity o WHERE o.user.email = :email AND o.paymentStatus = 1 AND o.orderDate >= :limitTime")
+	Optional<OrderEntity> findRecentOrder(@Param("email") String email, @Param("limitTime") LocalDateTime limitTime);
+
 }

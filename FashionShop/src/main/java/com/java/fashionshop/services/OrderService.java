@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -467,6 +468,13 @@ public class OrderService {
     public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
         UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
+        LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
+        Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
+
+        if (recentOrder.isPresent()) {
+            System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
+            return recentOrder.get();
+        }
 
         OrderEntity order = new OrderEntity();
         order.setUser(user);

@@ -24,6 +24,9 @@ import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -76,9 +79,6 @@ public class PaymentController {
 
 
         String computedHash = PaymentConfig.hmacSHA512(PaymentConfig.vnp_HashSecret, hashData);
-        System.out.println("👉 hashData = " + hashData);
-        System.out.println("👉 computedHash = " + computedHash);
-        System.out.println("👉 vnp_SecureHash = " + vnp_SecureHash);
         String redirectUrl = "http://localhost:5173/payment-success";
 
         if (computedHash.equals(vnp_SecureHash)) {
@@ -89,16 +89,36 @@ public class PaymentController {
             if ("00".equals(transactionStatus)) {
                 try {
                     String userEmail = extractEmailFromOrderInfo(vnp_OrderInfo);
+                    int paidAmount = Integer.parseInt(vnp_Amount) / 100;
 
-                    // ✅ Tạo đơn hàng sau khi thanh toán
-                    int paidAmount = Integer.parseInt(vnp_Amount) / 100; // vnp_Amount đơn vị là xu
                     orderService.createOrderAfterVnpaySuccess(userEmail, paidAmount);
 
-                    // ✅ Gửi mail
+                    String rawPayDate = params.get("vnp_PayDate");
+                    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+                    String formattedPayDate;
+                    try {
+                        LocalDateTime dateTime = LocalDateTime.parse(rawPayDate, inputFormatter);
+                        formattedPayDate = dateTime.format(outputFormatter);
+                    } catch (DateTimeParseException e) {
+                        formattedPayDate = rawPayDate;
+                    }
+
                     String subject = "Xác nhận thanh toán thành công";
-                    String content = String.format("Cảm ơn bạn đã thanh toán %d VND\nThời gian: %s",
-                            paidAmount,
-                            params.get("vnp_PayDate"));
+                    String content = String.format("""
+    <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color: #2c3e50;">Thanh toán thành công</h2>
+            <p>Cảm ơn bạn đã thanh toán <strong>%d VND</strong>.</p>
+            <p><strong>Thời gian thanh toán:</strong> %s</p>
+            <p>Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ với bộ phận hỗ trợ của chúng tôi.</p>
+            <br/>
+            <p style="font-size: 12px; color: #888;">Đây là email tự động, vui lòng không trả lời.</p>
+        </body>
+    </html>
+""", paidAmount, formattedPayDate);
+
                     emailService.sendEmail(userEmail, subject, content);
 
                     // Redirect như cũ
