@@ -11,6 +11,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class DiscountService {
@@ -20,6 +22,11 @@ public class DiscountService {
 
     public List<DiscountEntity> findAll() {
         return jpaDiscount.findAll();
+    }
+    
+    public Page<DiscountDTO> getDiscountDTOs(Pageable pageable) {
+        return jpaDiscount.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     public DiscountEntity findById(Integer id) {

@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.java.fashionshop.bean.PromotionBean;
 import com.java.fashionshop.dto.ProductPromotionDTO;
@@ -18,6 +20,9 @@ public class PromotionService {
     @Autowired
     private JpaPromotions promotionRepo;
     
+    public Page<PromotionDTO> findAllDtoPaging(Pageable pageable) {
+        return promotionRepo.findAll(pageable).map(this::convertToDTO);
+    }
     public List<PromotionDTO> findAllDto() {
         List<PromotionsEntity> entities = promotionRepo.findAll();
 
