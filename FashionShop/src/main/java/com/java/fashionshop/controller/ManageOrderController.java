@@ -3,11 +3,14 @@ package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/orders")
@@ -19,8 +22,12 @@ public class ManageOrderController {
     private OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<List<OrderDTO>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    public ResponseEntity<Page<OrderDTO>> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        return ResponseEntity.ok(orderService.getAllOrders(pageable));
     }
 
     @GetMapping("/{orderId}")
