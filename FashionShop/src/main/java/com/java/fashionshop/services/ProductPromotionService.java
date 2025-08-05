@@ -78,20 +78,30 @@ public class ProductPromotionService {
                 .collect(Collectors.toList());
     }
 
-  public List<ProductPromotionDTO> saveBulk(Integer promotionId, List<ProductPromotionBean> beans) {
+public List<ProductPromotionDTO> saveBulk(Integer promotionId, List<ProductPromotionBean> beans) {
     List<ProductPromotionDTO> result = new ArrayList<>();
-    List<Integer> conflictedVariantIds = new ArrayList<>();
 
+    // Bước 1: Kiểm tra toàn bộ xem có bị conflict không
+    for (ProductPromotionBean bean : beans) {
+        PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
+        ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
+
+        if (promotion == null || variant == null) {
+            return result; // Hoặc throw exception nếu cần
+        }
+
+        if (isOverlappingPromotion(bean.getProductVariantId(), promotionId, promotion.getStartDate(), promotion.getEndDate())) {
+            // Nếu có trùng thì dừng lại, không lưu gì hết
+            return result;
+        }
+    }
+
+    // Bước 2: Nếu tất cả đều ok → lưu vào DB
     for (ProductPromotionBean bean : beans) {
         PromotionsEntity promotion = JpaPromotion.findById(bean.getPromotionId()).orElse(null);
         ProductVariantEntity variant = JpaProductVariant.findById(bean.getProductVariantId()).orElse(null);
 
         if (promotion == null || variant == null) continue;
-
-        if (isOverlappingPromotion(bean.getProductVariantId(), promotionId, promotion.getStartDate(), promotion.getEndDate())) {
-            conflictedVariantIds.add(bean.getProductVariantId());
-            continue;
-        }
 
         ProductPromotionEntity entity = new ProductPromotionEntity();
         entity.setPromotion(promotion);
@@ -100,8 +110,10 @@ public class ProductPromotionService {
 
         result.add(convertToDTO(productPromotionRepo.save(entity)));
     }
+
     return result;
 }
+
     public ProductPromotionDTO update(Integer id, ProductPromotionBean bean) {
         ProductPromotionEntity entity = productPromotionRepo.findById(id).orElse(null);
         if (entity == null) return null;
