@@ -87,6 +87,7 @@ public class ManageProductController {
 	                      .map(this::convertToDTO)
 	                      .toList();
 	 }
+	 
 	 @GetMapping("/products")
 	 public ResponseEntity<?> getAllProductsPaged(
 	         @RequestParam(defaultValue = "0") int page,
