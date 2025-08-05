@@ -239,9 +239,12 @@ public class OrderService {
 			order.getOrderDetails().add(detail);
 			totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
 		}
+		if ((orderDTO.getStatus() == 2 || orderDTO.getStatus() == 3) && previousStatus != orderDTO.getStatus()) {
+		    order.setPaymentStatus(1); // Đã thanh toán
+		}
 
 		// Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
-		if (previousStatus == 4 && orderDTO.getStatus() == 6) {
+		  else if (previousStatus == 4 && orderDTO.getStatus() == 6) {
 			adjustStockForOrder(order, true);
 			order.setPaymentStatus(2);
 		}
