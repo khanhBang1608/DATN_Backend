@@ -40,7 +40,8 @@ public class ProductService {
 
 		// Chuyển đổi entity -> DTO, và chỉ giữ lại các sản phẩm có variant
 		List<ProductDTO> filteredDTOs = productPage.stream().map(this::convertToDTO)
-				.filter(dto -> dto.getVariants() != null && !dto.getVariants().isEmpty()).toList();
+				.filter(dto -> dto.getVariants() != null && !dto.getVariants().isEmpty())
+				.filter(dto -> Boolean.TRUE.equals(dto.getStatus()) && Boolean.TRUE.equals(dto.getCategoryStatus())).toList();
 
 		// Trả về Page thủ công (nếu đã filter mất phần tử)
 		return new PageImpl<>(filteredDTOs, pageable, productPage.getTotalElements());
@@ -131,6 +132,7 @@ public class ProductService {
 		if (product.getCategory() != null) {
 			dto.setCategoryId(product.getCategory().getCategoryId());
 			dto.setCategoryName(product.getCategory().getCategoryName());
+			dto.setCategoryStatus(product.getCategory().isStatus());
 		}
 
 		if (product.getVariants() != null) {
