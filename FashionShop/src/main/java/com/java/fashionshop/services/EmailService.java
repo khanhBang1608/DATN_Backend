@@ -12,8 +12,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.stereotype.Service;
+@Service
 
-@Service  
 public class EmailService {
     public void sendEmail(String recipient, String subject, String content) throws MessagingException {
         final String senderEmail = "trankhanhbang.010105@gmail.com";
@@ -23,7 +23,7 @@ public class EmailService {
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "465");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.ssl.enable", "true"); // Bật SSL
+        props.put("mail.smtp.ssl.enable", "true");
 
         Session mailSession = Session.getInstance(props, new Authenticator() {
             @Override
@@ -36,9 +36,9 @@ public class EmailService {
         message.setFrom(new InternetAddress(senderEmail));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
         message.setSubject(subject);
-        message.setText(content);
+
+        message.setContent(content, "text/html; charset=UTF-8");
 
         Transport.send(message);
     }
 }
-

@@ -7,6 +7,8 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.dto.SizesDTO;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.services.FavoriteService;
+import com.java.fashionshop.services.OrderService;
 import com.java.fashionshop.services.ProductService;
 import com.java.fashionshop.services.ProductVariantService;
 
@@ -14,6 +16,10 @@ import com.java.fashionshop.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.util.List;
 import java.util.Map;
@@ -32,23 +38,46 @@ public class ProductClientController {
     @Autowired
     private ProductVariantService productVariantService;
     
+    @Autowired
+    private OrderService orderService;
+    
+    @Autowired
+    private FavoriteService favoriteService;
+    
     @GetMapping("/products/top10")
-    public ResponseEntity<List<ProductDTO>> getTop10NewestProductsWithVariants() {
-        List<ProductDTO> dtos = productService.getTop10NewestProductsWithVariants();
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<?> getTopNewestProductsWithVariants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductEntity> products = productService.findTopNewestProductsWithVariants(pageable);
+
+        Page<ProductDTO> result = products.map(productService::convertToDTO);
+
+        return ResponseEntity.ok(result);
     }
-    // ✅ 1. Lấy toàn bộ sản phẩm cho trang danh sách
+
+    
     @GetMapping("/products")
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductDTO> dtos = productService.getAllEntity().stream()
-            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
-            .map(productService::convertToDTO)
-            .toList();
+    public ResponseEntity<?> getAllProducts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        return ResponseEntity.ok(dtos);
+        if (page != null && size != null) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductDTO> pagedResult = productService.getPaginatedProducts(pageable);
+            return ResponseEntity.ok(pagedResult);
+        } else {
+            List<ProductDTO> dtos = productService.getAllEntity().stream()
+                    .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+                    .map(productService::convertToDTO)
+                    .toList();
+
+            return ResponseEntity.ok(dtos);
+        }
     }
 
-    // ✅ 2. Lấy chi tiết sản phẩm theo id
+
     @GetMapping("/products/{id}")
     public ResponseEntity<?> getProductDetail(@PathVariable Integer id) {
         ProductEntity entity = productService.findEntityById(id);
@@ -58,7 +87,6 @@ public class ProductClientController {
         return ResponseEntity.ok(productService.convertToDTO(entity));  // tái sử dụng convertToDTO
     }
 
-    // ✅ 3. Lấy danh sách biến thể theo sản phẩm
     @GetMapping("/products/{id}/variants")
     public ResponseEntity<List<ProductVariantDTO>> getVariants(@PathVariable Integer id) {
         List<ProductVariantEntity> variants = productVariantService.findEntityByProductId(id);
@@ -115,23 +143,18 @@ public class ProductClientController {
         return ResponseEntity.ok(response);
     }
     
- // ✅ 4. Lấy sản phẩm liên quan theo id danh mục (loại trừ sản phẩm hiện tại nếu cần)
     @GetMapping("/products/related")
-    public ResponseEntity<List<ProductDTO>> getRelatedProducts(
+    public ResponseEntity<Page<ProductDTO>> getRelatedProducts(
             @RequestParam Integer categoryId,
-            @RequestParam(required = false) Integer excludeProductId) {
+            @RequestParam(required = false) Integer excludeProductId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
 
-        List<ProductEntity> relatedProducts = productService.findByCategoryId(categoryId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDTO> pagedResult = productService.getRelatedProducts(categoryId, excludeProductId, pageable);
 
-        List<ProductDTO> result = relatedProducts.stream()
-                .filter(p -> excludeProductId == null || !p.getProductId().equals(excludeProductId)) // loại trừ sản phẩm hiện tại
-                .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty()) // có biến thể
-                .map(productService::convertToDTO)
-                .toList();
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(pagedResult);
     }
-
 
     private ProductVariantDTO convertToVariantDTO(ProductVariantEntity variant) {
         ProductVariantDTO dto = new ProductVariantDTO();
@@ -164,4 +187,25 @@ public class ProductClientController {
         Double average = reviewService.getAverageRatingByProductId(productId);
         return ResponseEntity.ok(average != null ? average : 0.0);
     }
+    
+    @GetMapping("/products/{productId}/sold-count")
+    public ResponseEntity<?> getSoldCountByProductId(@PathVariable Integer productId) {
+        try {
+            Long soldCount = orderService.getTotalSoldQuantityByProductId(productId);
+            return ResponseEntity.ok().body(Map.of("soldCount", soldCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy số lượng đã bán"));
+        }
+    }
+    
+    @GetMapping("/products/{productId}/favorite-count")
+    public ResponseEntity<?> getFavoriteCount(@PathVariable Integer productId) {
+        try {
+            Long count = favoriteService.getFavoriteCountByProductId(productId);
+            return ResponseEntity.ok(Map.of("favoriteCount", count));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy lượt yêu thích"));
+        }
+    }
+
 }

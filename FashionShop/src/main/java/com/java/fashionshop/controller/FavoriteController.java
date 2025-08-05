@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/api/user/favorites")
 @CrossOrigin(origins = "*")
 public class FavoriteController {
 

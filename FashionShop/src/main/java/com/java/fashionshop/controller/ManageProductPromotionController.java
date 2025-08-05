@@ -57,9 +57,9 @@ public class ManageProductPromotionController {
 
         for (int i = 0; i < beans.size(); i++) {
             ProductPromotionBean bean = beans.get(i);
-            if (bean.getQuantityLimit() == null || bean.getQuantityLimit() <= 0) {
-                allErrors.add("Mục " + (i + 1) + ": Số lượng giới hạn phải lớn hơn 0");
-            }
+//            if (bean.getQuantityLimit() == null || bean.getQuantityLimit() <= 0) {
+//                allErrors.add("Mục " + (i + 1) + ": Số lượng giới hạn phải lớn hơn 0");
+//            }
             if (bean.getPromotionId() == null) {
                 allErrors.add("Mục " + (i + 1) + ": Mã khuyến mãi không được để trống");
             }

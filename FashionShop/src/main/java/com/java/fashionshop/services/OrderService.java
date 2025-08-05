@@ -12,7 +12,7 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.JpaDiscount;
 import com.java.fashionshop.jpa.JpaOrder;
-import com.java.fashionshop.jpa.JpaProductPromotion;
+import com.java.fashionshop.jpa.JpaOrderDetail;
 import com.java.fashionshop.jpa.JpaProductVariant;
 import com.java.fashionshop.jpa.JpaUser;
 import com.java.fashionshop.request.OrderCreateRequest;
@@ -22,12 +22,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,10 +47,10 @@ public class OrderService {
 
     @Autowired
     private JpaProductVariant productVariantRepository;
-    
-    @Autowired
-    private JpaProductPromotion productPromotionRepository;
 
+    @Autowired
+    private JpaOrderDetail jpaOrderDetail;
+    
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String email;
@@ -74,8 +77,12 @@ public class OrderService {
         order.setAddress(request.getAddress());
         order.setPaymentMethod(request.getPaymentMethod());
         order.setStatus(0); // 0: Pending
-        order.setPaymentStatus(0); // 0: Unpaid
-        order.setShippingFee(new BigDecimal("10000"));
+        if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+            order.setPaymentStatus(1); // 1: Paid
+        } else {
+            order.setPaymentStatus(0); // 0: Unpaid
+        }
+        order.setShippingFee(request.getShippingFee() != null ? request.getShippingFee() : BigDecimal.ZERO);
         order.setDiscountAmount(BigDecimal.ZERO);
 
         if (request.getDiscountCode() != null) {
@@ -239,26 +246,12 @@ public class OrderService {
 
         if (orderDTO.getStatus() == 1 && previousStatus != 1) {
             adjustStockForOrder(order, false);
-
-            for (OrderDetailEntity detail : order.getOrderDetails()) {
-                List<ProductPromotionEntity> promos = productPromotionRepository
-                        .findByProductVariant_ProductVariantId(detail.getProductVariant().getProductVariantId());
-                for (ProductPromotionEntity promo : promos) {
-                    if (promo.getQuantityLimit() != null && promo.getQuantityLimit() >= detail.getQuantity()) {
-                        promo.setQuantityLimit(promo.getQuantityLimit() - detail.getQuantity());
-                        productPromotionRepository.save(promo);
-                    }
-                }
-            }
         }
         
-     // Chỉ trừ stock nếu trạng thái mới là 3 (Delivered) và trạng thái trước không phải 3
-        if (orderDTO.getStatus() == 3 && previousStatus != 3) {
-            adjustStockForOrder(order, false);
-        }
         // Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
         else if (previousStatus == 3 && orderDTO.getStatus() != 3) {
             adjustStockForOrder(order, true);
+            order.setPaymentStatus(0);
         }
         
         order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
@@ -385,9 +378,9 @@ public class OrderService {
             throw new RuntimeException("Lỗi tạo PDF", e);
         }
     }
-    public List<ProductDTO> getTop50BestSellingProducts() {
-        List<Object[]> results = orderRepository.findTop50BestSellingProducts();
-        return results.stream().limit(50).map(result -> {
+    public Page<ProductDTO> getBestSellingProducts(Pageable pageable) {
+        Page<Object[]> results = orderRepository.findBestSellingProducts(pageable);
+        return results.map(result -> {
             ProductEntity product = (ProductEntity) result[0];
             Long totalSold = (Long) result[1];
 
@@ -399,7 +392,7 @@ public class OrderService {
             dto.setStatus(product.getStatus());
             dto.setCategoryId(product.getCategory().getCategoryId());
             dto.setCategoryName(product.getCategory().getCategoryName());
-            dto.setViewCount(totalSold.intValue()); // Tạm dùng viewCount để lưu totalSold
+            dto.setViewCount(totalSold.intValue()); // tạm dùng viewCount làm totalSold
 
             List<ProductVariantDTO> variants = product.getVariants().stream()
                 .map(v -> {
@@ -415,10 +408,10 @@ public class OrderService {
                     return variantDTO;
                 })
                 .collect(Collectors.toList());
-            dto.setVariants(variants);
 
+            dto.setVariants(variants);
             return dto;
-        }).collect(Collectors.toList());
+        });
     }
 
     @Transactional
@@ -449,6 +442,7 @@ public class OrderService {
         }
 
         order.setStatus(6);
+        order.setPaymentStatus(0); 
         adjustStockForOrder(order, true);
         orderRepository.save(order);
     }
@@ -465,5 +459,36 @@ public class OrderService {
         order.setStatus(7);
         orderRepository.save(order);
     }
+    public Long getTotalSoldQuantityByProductId(Integer productId) {
+        Long totalSold = jpaOrderDetail.getTotalSoldQuantityByProductId(productId);
+        return totalSold != null ? totalSold : 0L;
+    }
+
+    @Transactional
+    public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
+        UserEntity user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
+        LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
+        Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
+
+        if (recentOrder.isPresent()) {
+            System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
+            return recentOrder.get();
+        }
+
+        OrderEntity order = new OrderEntity();
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
+        order.setAddress("Địa chỉ mặc định");
+        order.setPaymentMethod("VNPAY");
+        order.setStatus(0); // Pending
+        order.setPaymentStatus(1); // Đã thanh toán
+        order.setShippingFee(BigDecimal.valueOf(10000));
+        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+
+        return orderRepository.save(order);
+    }
+
 
 }

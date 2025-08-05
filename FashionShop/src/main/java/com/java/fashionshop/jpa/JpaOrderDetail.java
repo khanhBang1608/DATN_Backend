@@ -23,4 +23,15 @@ public interface JpaOrderDetail extends JpaRepository<OrderDetailEntity, Integer
     Optional<OrderDetailEntity> findUnreviewedOrderDetailByProductIdAndUserId(
             @Param("productId") Integer productId,
             @Param("userId") Integer userId);
+    
+    @Query("""
+            SELECT SUM(od.quantity)
+            FROM OrderDetailEntity od
+            JOIN od.productVariant pv
+            JOIN pv.product p
+            JOIN od.order o
+            WHERE p.productId = :productId
+              AND o.status = 3
+        """)
+        Long getTotalSoldQuantityByProductId(@Param("productId") Integer productId);
 }

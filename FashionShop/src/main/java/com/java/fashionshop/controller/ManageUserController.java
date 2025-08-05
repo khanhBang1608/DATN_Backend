@@ -6,12 +6,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
 
+import com.java.fashionshop.dto.AddressDTO;
 import com.java.fashionshop.dto.UserDTO;
 import com.java.fashionshop.entity.UserEntity;
+import com.java.fashionshop.services.AddressService;
 import com.java.fashionshop.services.UserService;
 
 @RestController
@@ -21,25 +22,38 @@ public class ManageUserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private AddressService addressService;
 
     // ✅ API lấy danh sách tất cả người dùng (trừ role = 0 nếu đúng như bạn filter)
     @GetMapping
-    public List<UserDTO> getAllUsers() {
-        List<UserEntity> users = userService.findAllUsers();
+    public ResponseEntity<?> getAllUsersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<UserEntity> userPage = userService.findUsersPaged(page, size);
 
-        return users.stream().map(user -> new UserDTO(
+        List<UserDTO> users = userPage.getContent().stream().map(user -> new UserDTO(
                 user.getUserId(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getAvatar(),
                 user.getStatus() != null ? user.getStatus() : false,
                 user.getRole(),
-                user.getDateCreated() // ✅ Truyền ngày tạo vào
+                user.getDateCreated()
         )).collect(Collectors.toList());
+
+        return ResponseEntity.ok(
+            new java.util.HashMap<String, Object>() {{
+                put("users", users);
+                put("totalPages", userPage.getTotalPages());
+                put("totalElements", userPage.getTotalElements());
+                put("currentPage", userPage.getNumber());
+            }}
+        );
     }
-
-
-
+    
     @PutMapping("/update-status/{id}")
     public ResponseEntity<?> updateUserStatus(
             @PathVariable("id") Integer userId,
@@ -64,6 +78,12 @@ public class ManageUserController {
         public void setStatus(boolean status) {
             this.status = status;
         }
+    }
+
+    @GetMapping("/{userId}/addresses")
+    public ResponseEntity<?> getUserAddresses(@PathVariable Integer userId) {
+        List<AddressDTO> addresses = addressService.getAddressesByUserId(userId);
+        return ResponseEntity.ok(addresses);
     }
 
 
