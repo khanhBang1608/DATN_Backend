@@ -3,9 +3,12 @@ package com.java.fashionshop.component;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,11 +18,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     public JwtFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
@@ -33,9 +38,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // ✅ Bỏ qua filter với các API công khai
         if (requestPath.startsWith("/api/public")
-            || requestPath.startsWith("/api/login")
-            || requestPath.startsWith("/api/register")
-            || requestPath.startsWith("/images")) {
+                || requestPath.startsWith("/api/login")
+                || requestPath.startsWith("/api/register")
+                || requestPath.startsWith("/images")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -49,14 +54,9 @@ public class JwtFilter extends OncePerRequestFilter {
             jwt = authorizationHeader.substring(7);
 
             try {
-                email = jwtUtil.extractEmail(jwt); // ❗ Có thể ném ExpiredJwtException
+                email = jwtUtil.extractEmail(jwt);
             } catch (ExpiredJwtException e) {
                 System.out.println("⚠️ Token hết hạn: " + e.getMessage());
-                // Bạn có thể return 401 tại đây nếu muốn
-                // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
-                // return;
-
-                // Hoặc bỏ qua filter và cho tiếp tục chạy như anonymous user
                 filterChain.doFilter(request, response);
                 return;
             } catch (Exception e) {
@@ -67,10 +67,10 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String role = jwtUtil.extractRole(jwt);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority(role)));
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
