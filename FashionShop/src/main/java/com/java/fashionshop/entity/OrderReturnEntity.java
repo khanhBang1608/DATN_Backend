@@ -24,10 +24,10 @@ public class OrderReturnEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(100)")
     private String reason;
 
-    @Column(name = "image_urls", columnDefinition = "TEXT") // nếu chỉ lưu 1 chuỗi JSON các url
+    @Column(name = "image_urls", columnDefinition = "TEXT")
     private String imageUrls;
 
     @Column(name = "video_urls", columnDefinition = "TEXT")
