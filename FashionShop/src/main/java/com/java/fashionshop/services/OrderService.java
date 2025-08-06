@@ -1,20 +1,15 @@
 package com.java.fashionshop.services;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
-import com.java.fashionshop.dto.OrderDTO;
-import com.java.fashionshop.dto.OrderDetailDTO;
-import com.java.fashionshop.dto.ProductDTO;
-import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.dto.*;
 import com.java.fashionshop.entity.*;
-import com.java.fashionshop.jpa.JpaDiscount;
-import com.java.fashionshop.jpa.JpaOrder;
-import com.java.fashionshop.jpa.JpaOrderDetail;
-import com.java.fashionshop.jpa.JpaProductVariant;
-import com.java.fashionshop.jpa.JpaUser;
+import com.java.fashionshop.jpa.*;
 import com.java.fashionshop.request.OrderCreateRequest;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +51,9 @@ public class OrderService {
 
     @Autowired
     private JpaOrderDetail jpaOrderDetail;
+
+    @Autowired
+    private JpaOrderReturnEntity jpaOrderReturnEntity;
     
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -413,9 +417,27 @@ public class OrderService {
             return dto;
         });
     }
+//
+//    @Transactional
+//    public void requestReturn(Integer orderId) {
+//        Integer userId = getAuthenticatedUserId();
+//        OrderEntity order = orderRepository.findById(orderId)
+//                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+//
+//        if (!order.getUser().getUserId().equals(userId)) {
+//            throw new SecurityException("Không có quyền gửi yêu cầu trả hàng cho đơn này");
+//        }
+//
+//        if (order.getStatus() != 3) {
+//            throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
+//        }
+//
+//        order.setStatus(4);
+//        orderRepository.save(order);
+//    }
 
     @Transactional
-    public void requestReturn(Integer orderId) {
+    public void requestReturn(Integer orderId, OrderReturnDTO dto) {
         Integer userId = getAuthenticatedUserId();
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
@@ -428,22 +450,45 @@ public class OrderService {
             throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
         }
 
+        if (jpaOrderReturnEntity.findByOrder(order).isPresent()) {
+            throw new IllegalStateException("Đơn hàng đã gửi yêu cầu trả hàng");
+        }
+
+        OrderReturnEntity returnRequest = new OrderReturnEntity();
+        returnRequest.setOrder(order);
+        returnRequest.setUser(order.getUser());
+        returnRequest.setReason(dto.getReason());
+        returnRequest.setImageUrls(convertListToJson(dto.getImageUrls()));
+        returnRequest.setVideoUrls(convertListToJson(dto.getVideoUrls()));
+        returnRequest.setStatus(0);
+
+        jpaOrderReturnEntity.save(returnRequest);
+
         order.setStatus(4);
         orderRepository.save(order);
     }
 
+    private String convertListToJson(List<String> list) {
+        return list != null ? new Gson().toJson(list) : "[]";
+    }
     @Transactional
     public void acceptReturn(Integer orderId) {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        if (order.getStatus() != 4) {
-            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
+
+        if (order.getStatus() != 4 || returnRequest.getStatus() != 0) {
+            throw new IllegalStateException("Yêu cầu không hợp lệ hoặc đã xử lý");
         }
 
-        order.setStatus(6);
-        order.setPaymentStatus(0); 
-        adjustStockForOrder(order, true);
+        returnRequest.setStatus(1); // Chấp nhận
+        jpaOrderReturnEntity.save(returnRequest);
+
+        order.setStatus(6); // Trả hàng thành công
+        order.setPaymentStatus(0); // Hoàn tiền
+        adjustStockForOrder(order, true); // Trả lại hàng vào kho
         orderRepository.save(order);
     }
 
@@ -452,17 +497,48 @@ public class OrderService {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        if (order.getStatus() != 4) {
-            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
+        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
+
+        if (order.getStatus() != 4 || returnRequest.getStatus() != 0) {
+            throw new IllegalStateException("Yêu cầu không hợp lệ hoặc đã xử lý");
         }
 
-        order.setStatus(7);
+        returnRequest.setStatus(2); // Từ chối
+        jpaOrderReturnEntity.save(returnRequest);
+
+        order.setStatus(3); // Trả lại trạng thái "đã giao"
         orderRepository.save(order);
     }
+    public OrderReturnDTO getReturnRequestByOrderId(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với id: " + orderId));
+
+        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
+
+        OrderReturnDTO dto = new OrderReturnDTO();
+        dto.setReason(returnRequest.getReason());
+        dto.setImageUrls(convertJsonToList(returnRequest.getImageUrls()));
+        dto.setVideoUrls(convertJsonToList(returnRequest.getVideoUrls()));
+        return dto;
+    }
+
+    private List<String> convertJsonToList(String json) {
+        return json != null ? new Gson().fromJson(json, new TypeToken<List<String>>() {}.getType()) : new ArrayList<>();
+    }
+
+
+    private List<String> parseJsonToList(String json) {
+        return new Gson().fromJson(json, new TypeToken<List<String>>() {}.getType());
+    }
+
     public Long getTotalSoldQuantityByProductId(Integer productId) {
         Long totalSold = jpaOrderDetail.getTotalSoldQuantityByProductId(productId);
         return totalSold != null ? totalSold : 0L;
     }
+
+
 
     @Transactional
     public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
