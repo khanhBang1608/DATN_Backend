@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.SizesEntity;
@@ -21,8 +23,8 @@ public class AttributeService {
     private JpaSizes jpaSizes;
 
     // Color Methods
-    public List<ColorsEntity> getAllColors() {
-        return jpaColors.findAll();
+    public Page<ColorsEntity> getAllColors(Pageable pageable) {
+        return jpaColors.findAll(pageable);
     }
 
     public Optional<ColorsEntity> getColorById(Integer id) {
@@ -44,8 +46,8 @@ public class AttributeService {
 
 
     // Size Methods
-    public List<SizesEntity> getAllSizes() {
-        return jpaSizes.findAll();
+    public Page<SizesEntity> getAllSizes(Pageable pageable) {
+        return jpaSizes.findAll(pageable);
     }
 
     public Optional<SizesEntity> getSizeById(Integer id) {

@@ -80,7 +80,14 @@ public class ManageProductController {
 	     return ResponseEntity.ok(jpaSizes.findAll());
 	 }
 
-	
+	 @GetMapping("/productss")
+	 public List<ProductDTO> getAllProduct() {
+	     return jpaProduct.findAll()
+	                      .stream()
+	                      .map(this::convertToDTO)
+	                      .toList();
+	 }
+	 
 	 @GetMapping("/products")
 	 public ResponseEntity<?> getAllProductsPaged(
 	         @RequestParam(defaultValue = "0") int page,
