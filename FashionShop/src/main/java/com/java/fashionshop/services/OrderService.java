@@ -1,15 +1,20 @@
 package com.java.fashionshop.services;
 
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
-import com.java.fashionshop.dto.*;
+import com.java.fashionshop.dto.OrderDTO;
+import com.java.fashionshop.dto.OrderDetailDTO;
+import com.java.fashionshop.dto.ProductDTO;
+import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.*;
-import com.java.fashionshop.jpa.*;
+import com.java.fashionshop.jpa.JpaDiscount;
+import com.java.fashionshop.jpa.JpaOrder;
+import com.java.fashionshop.jpa.JpaOrderDetail;
+import com.java.fashionshop.jpa.JpaProductVariant;
+import com.java.fashionshop.jpa.JpaUser;
 import com.java.fashionshop.request.OrderCreateRequest;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,44 +23,33 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.domain.Sort;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
 
-	@Autowired
-	private JpaOrder orderRepository;
+    @Autowired
+    private JpaOrder orderRepository;
 
-	@Autowired
-	private JpaUser userRepository;
+    @Autowired
+    private JpaUser userRepository;
 
-	@Autowired
-	private JpaDiscount discountRepository;
+    @Autowired
+    private JpaDiscount discountRepository;
 
-	@Autowired
-	private JpaProductVariant productVariantRepository;
+    @Autowired
+    private JpaProductVariant productVariantRepository;
 
     @Autowired
     private JpaOrderDetail jpaOrderDetail;
-
-    @Autowired
-    private JpaOrderReturnEntity jpaOrderReturnEntity;
 
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -128,21 +122,21 @@ public class OrderService {
 				price = variant.getPrice(); // fallback nếu thiếu
 			}
 
-			OrderDetailEntity detail = new OrderDetailEntity();
-			detail.setOrder(order);
-			detail.setQuantity(detailRequest.getQuantity());
-			detail.setPrice(price); // ✅ dùng giá từ request nếu có
-			detail.setProductVariant(variant);
+            OrderDetailEntity detail = new OrderDetailEntity();
+            detail.setOrder(order);
+            detail.setQuantity(detailRequest.getQuantity());
+            detail.setPrice(price); // ✅ dùng giá từ request nếu có
+            detail.setProductVariant(variant);
 
-			order.getOrderDetails().add(detail);
-			totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
-		}
-		adjustStockForOrder(order, false);
-		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
-		order = orderRepository.save(order);
+            order.getOrderDetails().add(detail);
+            totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
+        }
 
-		return convertToDTO(order);
-	}
+        order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+        order = orderRepository.save(order);
+
+        return convertToDTO(order);
+    }
 
     public List<OrderDTO> getUserOrders() {
         Integer userId = getAuthenticatedUserId();
@@ -156,147 +150,149 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-	public OrderDTO getOrderDetails(Integer orderId) {
-		Integer userId = getAuthenticatedUserId();
+    public OrderDTO getOrderDetails(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
 
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-		if (!order.getUser().getUserId().equals(userId)) {
-			throw new SecurityException("Không có quyền truy cập order");
-		}
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("Không có quyền truy cập order");
+        }
 
-		return convertToDTO(order);
-	}
+        return convertToDTO(order);
+    }
 
-	@Transactional
-	public void cancelOrder(Integer orderId) {
-		Integer userId = getAuthenticatedUserId();
+    @Transactional
+    public void cancelOrder(Integer orderId) {
+        Integer userId = getAuthenticatedUserId();
 
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-		if (!order.getUser().getUserId().equals(userId)) {
-			throw new SecurityException("Không có quyền hủy order");
-		}
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new SecurityException("Không có quyền hủy order");
+        }
 
-		if (order.getStatus() != 0) {
-			throw new IllegalStateException("Chỉ có thể hủy order ở trạng thái Pending");
-		}
+        if (order.getStatus() != 0) {
+            throw new IllegalStateException("Chỉ có thể hủy order ở trạng thái Pending");
+        }
 
-		// ✅ Hoàn stock nếu trạng thái còn pending và đã từng trừ stock
-		adjustStockForOrder(order, true); // vì trong createOrder đã trừ rồi
-
-		order.setStatus(5); // Cancelled
-		orderRepository.save(order);
-	}
-
-	@Transactional
-	public OrderDTO updateOrder(Integer orderId, OrderDTO orderDTO) {
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
-
-		// Lưu trạng thái trước để so sánh
-		int previousStatus = order.getStatus();
-
-		order.setAddress(orderDTO.getAddress());
-		order.setPaymentMethod(orderDTO.getPaymentMethod());
-		order.setStatus(orderDTO.getStatus());
-		order.setPaymentStatus(orderDTO.getPaymentStatus());
-		order.setShippingFee(orderDTO.getShippingFee());
-		order.setDiscountAmount(orderDTO.getDiscountAmount());
-
-		if (orderDTO.getUserId() != null) {
-			UserEntity user = userRepository.findById(orderDTO.getUserId()).orElseThrow(
-					() -> new EntityNotFoundException("Không tìm thấy user với id: " + orderDTO.getUserId()));
-			order.setUser(user);
-		}
-
-		if (orderDTO.getDiscountCode() != null) {
-			DiscountEntity discount = discountRepository.findByDiscountCode(orderDTO.getDiscountCode()).orElseThrow(
-					() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountCode()));
-			order.setDiscountCode(discount.getDiscountCode());
-			order.setDiscountAmount(calculateDiscount(order, discount));
-		} else {
-			order.setDiscountCode(null);
-			order.setDiscountAmount(BigDecimal.ZERO);
-		}
-
-		// Xử lý OrderDetails
-		order.getOrderDetails().clear();
-		BigDecimal totalAmount = BigDecimal.ZERO;
-		for (OrderDetailDTO detailDTO : orderDTO.getOrderDetails()) {
-			if (detailDTO.getQuantity() <= 0) {
-				throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
-			}
-
-			ProductVariantEntity variant = productVariantRepository.findById(detailDTO.getProductVariantId())
-					.orElseThrow(() -> new EntityNotFoundException(
-							"Không tìm thấy product variant với id: " + detailDTO.getProductVariantId()));
-
-			if (variant.getStock() < detailDTO.getQuantity()) {
-				throw new RuntimeException("Hết hàng cho variant: " + variant.getProductVariantId());
-			}
-
-			OrderDetailEntity detail = new OrderDetailEntity();
-			detail.setOrder(order);
-			detail.setQuantity(detailDTO.getQuantity());
-			detail.setPrice(variant.getPrice());
-			detail.setProductVariant(variant);
-			order.getOrderDetails().add(detail);
-			totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
-		}
-		if ((orderDTO.getStatus() == 2 || orderDTO.getStatus() == 3) && previousStatus != orderDTO.getStatus()) {
-		    order.setPaymentStatus(1); // Đã thanh toán
-		}
-
-		// Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
-		  else if (previousStatus == 4 && orderDTO.getStatus() == 6) {
-			adjustStockForOrder(order, true);
-			order.setPaymentStatus(2);
-		}
-
-		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
-		order = orderRepository.save(order);
-		return convertToDTO(order);
-	}
-
-	@Transactional
-	public void deleteOrder(Integer orderId) {
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
-
-		// Hoàn stock nếu order ở trạng thái 3
+        // Hoàn stock nếu order đã trừ stock (trường hợp bất thường)
         if (order.getStatus() == 3) {
             adjustStockForOrder(order, true);
         }
 
-		orderRepository.delete(order);
-	}
+        order.setStatus(5); // 5: Cancelled
+        orderRepository.save(order);
+    }
 
-	private void adjustStockForOrder(OrderEntity order, boolean isRestock) {
-		for (OrderDetailEntity detail : order.getOrderDetails()) {
-			ProductVariantEntity variant = detail.getProductVariant();
-			int quantity = detail.getQuantity();
-			if (isRestock) {
-				variant.setStock(variant.getStock() + quantity);
-			} else {
-				variant.setStock(variant.getStock() - quantity);
-			}
-			productVariantRepository.save(variant);
-		}
-	}
+    @Transactional
+    public OrderDTO updateOrder(Integer orderId, OrderDTO orderDTO) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-	private BigDecimal calculateDiscount(OrderEntity order, DiscountEntity discount) {
-		BigDecimal total = order.getOrderDetails().stream()
-				.map(detail -> detail.getPrice().multiply(new BigDecimal(detail.getQuantity())))
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-		BigDecimal discountAmount = total.multiply(new BigDecimal(discount.getDiscountPercent() / 100.0));
-		if (discount.getMaxDiscountAmount() != null) {
-			discountAmount = discountAmount.min(new BigDecimal(discount.getMaxDiscountAmount()));
-		}
-		return discountAmount;
-	}
+        // Lưu trạng thái trước để so sánh
+        int previousStatus = order.getStatus();
+
+        order.setAddress(orderDTO.getAddress());
+        order.setPaymentMethod(orderDTO.getPaymentMethod());
+        order.setStatus(orderDTO.getStatus());
+        order.setPaymentStatus(orderDTO.getPaymentStatus());
+        order.setShippingFee(orderDTO.getShippingFee());
+        order.setDiscountAmount(orderDTO.getDiscountAmount());
+
+        if (orderDTO.getUserId() != null) {
+            UserEntity user = userRepository.findById(orderDTO.getUserId())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với id: " + orderDTO.getUserId()));
+            order.setUser(user);
+        }
+
+        if (orderDTO.getDiscountCode() != null) {
+            DiscountEntity discount = discountRepository.findByDiscountCode(orderDTO.getDiscountCode())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy discount với id: " + orderDTO.getDiscountCode()));
+            order.setDiscountCode(discount.getDiscountCode());
+            order.setDiscountAmount(calculateDiscount(order, discount));
+        } else {
+            order.setDiscountCode(null);
+            order.setDiscountAmount(BigDecimal.ZERO);
+        }
+
+        // Xử lý OrderDetails
+        order.getOrderDetails().clear();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderDetailDTO detailDTO : orderDTO.getOrderDetails()) {
+            if (detailDTO.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+            }
+
+            ProductVariantEntity variant = productVariantRepository.findById(detailDTO.getProductVariantId())
+                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy product variant với id: " + detailDTO.getProductVariantId()));
+
+            if (variant.getStock() < detailDTO.getQuantity()) {
+                throw new RuntimeException("Hết hàng cho variant: " + variant.getProductVariantId());
+            }
+
+            OrderDetailEntity detail = new OrderDetailEntity();
+            detail.setOrder(order);
+            detail.setQuantity(detailDTO.getQuantity());
+            detail.setPrice(variant.getPrice());
+            detail.setProductVariant(variant);
+            order.getOrderDetails().add(detail);
+            totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
+        }
+
+        if (orderDTO.getStatus() == 1 && previousStatus != 1) {
+            adjustStockForOrder(order, false);
+        }
+
+        // Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
+        else if (previousStatus == 3 && orderDTO.getStatus() != 3) {
+            adjustStockForOrder(order, true);
+            order.setPaymentStatus(0);
+        }
+
+        order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+        order = orderRepository.save(order);
+        return convertToDTO(order);
+    }
+
+    @Transactional
+    public void deleteOrder(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+        // Hoàn stock nếu order ở trạng thái 3
+        if (order.getStatus() == 3) {
+            adjustStockForOrder(order, true);
+        }
+
+        orderRepository.delete(order);
+    }
+
+    private void adjustStockForOrder(OrderEntity order, boolean isRestock) {
+        for (OrderDetailEntity detail : order.getOrderDetails()) {
+            ProductVariantEntity variant = detail.getProductVariant();
+            int quantity = detail.getQuantity();
+            if (isRestock) {
+                variant.setStock(variant.getStock() + quantity);
+            } else {
+                variant.setStock(variant.getStock() - quantity);
+            }
+            productVariantRepository.save(variant);
+        }
+    }
+
+    private BigDecimal calculateDiscount(OrderEntity order, DiscountEntity discount) {
+        BigDecimal total = order.getOrderDetails().stream()
+                .map(detail -> detail.getPrice().multiply(new BigDecimal(detail.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal discountAmount = total.multiply(new BigDecimal(discount.getDiscountPercent() / 100.0));
+        if (discount.getMaxDiscountAmount() != null) {
+            discountAmount = discountAmount.min(new BigDecimal(discount.getMaxDiscountAmount()));
+        }
+        return discountAmount;
+    }
 
     private OrderDTO convertToDTO(OrderEntity order) {
         List<OrderDetailDTO> orderDetails = order.getOrderDetails().stream()
@@ -329,74 +325,72 @@ public class OrderService {
         );
     }
 
-	public Page<OrderDTO> getAllOrders(Pageable pageable) {
-		// Ghi đè sort theo status ASC
-		Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-				Sort.by(Sort.Direction.ASC, "status"));
+    public List<OrderDTO> getAllOrders() {
+        return orderRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
-		return orderRepository.findAll(sortedPageable).map(this::convertToDTO);
-	}
+    public OrderDTO getOrderById(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+        return convertToDTO(order);
+    }
 
-	public OrderDTO getOrderById(Integer orderId) {
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
-		return convertToDTO(order);
-	}
+    public byte[] exportInvoicePdf(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-	public byte[] exportInvoicePdf(Integer orderId) {
-		OrderEntity order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
 
-		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-			PdfWriter writer = new PdfWriter(baos);
-			PdfDocument pdf = new PdfDocument(writer);
-			Document document = new Document(pdf);
+            document.add(new Paragraph("Hóa đơn của đơn hàng #" + order.getOrderId()));
+            document.add(new Paragraph("Khách hàng: " + order.getUser().getFullName()));
+            document.add(new Paragraph("Địa chỉ: " + order.getAddress()));
+            document.add(new Paragraph("Ngày đặt hàng: " + order.getOrderDate()));
+            document.add(new Paragraph("Phương thức thanh toán: " + order.getPaymentMethod()));
+            document.add(new Paragraph("Trạng thái đơn hàng: " + order.getStatus()));
+            document.add(new Paragraph("Tổng tiền: " + order.getTotalAmount()));
 
-			document.add(new Paragraph("Hóa đơn của đơn hàng #" + order.getOrderId()));
-			document.add(new Paragraph("Khách hàng: " + order.getUser().getFullName()));
-			document.add(new Paragraph("Địa chỉ: " + order.getAddress()));
-			document.add(new Paragraph("Ngày đặt hàng: " + order.getOrderDate()));
-			document.add(new Paragraph("Phương thức thanh toán: " + order.getPaymentMethod()));
-			document.add(new Paragraph("Trạng thái đơn hàng: " + order.getStatus()));
-			document.add(new Paragraph("Tổng tiền: " + order.getTotalAmount()));
+            float[] columnWidths = {1, 3, 1, 2};
+            Table table = new Table(columnWidths);
+            table.addCell("Quantity");
+            table.addCell("Product");
+            table.addCell("Price");
+            table.addCell("Total");
 
-			float[] columnWidths = { 1, 3, 1, 2 };
-			Table table = new Table(columnWidths);
-			table.addCell("Quantity");
-			table.addCell("Product");
-			table.addCell("Price");
-			table.addCell("Total");
+            for (OrderDetailEntity detail : order.getOrderDetails()) {
+                table.addCell(String.valueOf(detail.getQuantity()));
+                table.addCell(detail.getProductVariant().getProduct().getName());
+                table.addCell(String.valueOf(detail.getPrice()));
+                table.addCell(String.valueOf(detail.getPrice().multiply(new BigDecimal(detail.getQuantity()))));
+            }
 
-			for (OrderDetailEntity detail : order.getOrderDetails()) {
-				table.addCell(String.valueOf(detail.getQuantity()));
-				table.addCell(detail.getProductVariant().getProduct().getName());
-				table.addCell(String.valueOf(detail.getPrice()));
-				table.addCell(String.valueOf(detail.getPrice().multiply(new BigDecimal(detail.getQuantity()))));
-			}
+            document.add(table);
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi tạo PDF", e);
+        }
+    }
+    public Page<ProductDTO> getBestSellingProducts(Pageable pageable) {
+        Page<Object[]> results = orderRepository.findBestSellingProducts(pageable);
+        return results.map(result -> {
+            ProductEntity product = (ProductEntity) result[0];
+            Long totalSold = (Long) result[1];
 
-			document.add(table);
-			document.close();
-			return baos.toByteArray();
-		} catch (Exception e) {
-			throw new RuntimeException("Lỗi tạo PDF", e);
-		}
-	}
-
-	public Page<ProductDTO> getBestSellingProducts(Pageable pageable) {
-		Page<Object[]> results = orderRepository.findBestSellingProducts(pageable);
-		return results.map(result -> {
-			ProductEntity product = (ProductEntity) result[0];
-			Long totalSold = (Long) result[1];
-
-			ProductDTO dto = new ProductDTO();
-			dto.setProductId(product.getProductId());
-			dto.setName(product.getName());
-			dto.setDescription(product.getDescription());
-			dto.setDateCreated(product.getDateCreated());
-			dto.setStatus(product.getStatus());
-			dto.setCategoryId(product.getCategory().getCategoryId());
-			dto.setCategoryName(product.getCategory().getCategoryName());
-			dto.setViewCount(totalSold.intValue()); // tạm dùng viewCount làm totalSold
+            ProductDTO dto = new ProductDTO();
+            dto.setProductId(product.getProductId());
+            dto.setName(product.getName());
+            dto.setDescription(product.getDescription());
+            dto.setDateCreated(product.getDateCreated());
+            dto.setStatus(product.getStatus());
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+            dto.setViewCount(totalSold.intValue()); // tạm dùng viewCount làm totalSold
 
             List<ProductVariantDTO> variants = product.getVariants().stream()
                 .map(v -> {
@@ -417,27 +411,9 @@ public class OrderService {
             return dto;
         });
     }
-//
-//    @Transactional
-//    public void requestReturn(Integer orderId) {
-//        Integer userId = getAuthenticatedUserId();
-//        OrderEntity order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
-//
-//        if (!order.getUser().getUserId().equals(userId)) {
-//            throw new SecurityException("Không có quyền gửi yêu cầu trả hàng cho đơn này");
-//        }
-//
-//        if (order.getStatus() != 3) {
-//            throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
-//        }
-//
-//        order.setStatus(4);
-//        orderRepository.save(order);
-//    }
 
     @Transactional
-    public void requestReturn(Integer orderId, OrderReturnDTO dto) {
+    public void requestReturn(Integer orderId) {
         Integer userId = getAuthenticatedUserId();
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
@@ -450,45 +426,22 @@ public class OrderService {
             throw new IllegalStateException("Chỉ có thể yêu cầu trả hàng khi đơn đã giao");
         }
 
-        if (jpaOrderReturnEntity.findByOrder(order).isPresent()) {
-            throw new IllegalStateException("Đơn hàng đã gửi yêu cầu trả hàng");
-        }
-
-        OrderReturnEntity returnRequest = new OrderReturnEntity();
-        returnRequest.setOrder(order);
-        returnRequest.setUser(order.getUser());
-        returnRequest.setReason(dto.getReason());
-        returnRequest.setImageUrls(convertListToJson(dto.getImageUrls()));
-        returnRequest.setVideoUrls(convertListToJson(dto.getVideoUrls()));
-        returnRequest.setStatus(0);
-
-        jpaOrderReturnEntity.save(returnRequest);
-
         order.setStatus(4);
         orderRepository.save(order);
     }
 
-    private String convertListToJson(List<String> list) {
-        return list != null ? new Gson().toJson(list) : "[]";
-    }
     @Transactional
     public void acceptReturn(Integer orderId) {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
-
-        if (order.getStatus() != 4 || returnRequest.getStatus() != 0) {
-            throw new IllegalStateException("Yêu cầu không hợp lệ hoặc đã xử lý");
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
         }
 
-        returnRequest.setStatus(1); // Chấp nhận
-        jpaOrderReturnEntity.save(returnRequest);
-
-        order.setStatus(6); // Trả hàng thành công
-        order.setPaymentStatus(0); // Hoàn tiền
-        adjustStockForOrder(order, true); // Trả lại hàng vào kho
+        order.setStatus(6);
+        order.setPaymentStatus(0);
+        adjustStockForOrder(order, true);
         orderRepository.save(order);
     }
 
@@ -497,48 +450,17 @@ public class OrderService {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
-
-        if (order.getStatus() != 4 || returnRequest.getStatus() != 0) {
-            throw new IllegalStateException("Yêu cầu không hợp lệ hoặc đã xử lý");
+        if (order.getStatus() != 4) {
+            throw new IllegalStateException("Chỉ xử lý đơn đang ở trạng thái yêu cầu trả hàng");
         }
 
-        returnRequest.setStatus(2); // Từ chối
-        jpaOrderReturnEntity.save(returnRequest);
-
-        order.setStatus(3); // Trả lại trạng thái "đã giao"
+        order.setStatus(7);
         orderRepository.save(order);
     }
-    public OrderReturnDTO getReturnRequestByOrderId(Integer orderId) {
-        OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với id: " + orderId));
-
-        OrderReturnEntity returnRequest = jpaOrderReturnEntity.findByOrder(order)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy yêu cầu trả hàng"));
-
-        OrderReturnDTO dto = new OrderReturnDTO();
-        dto.setReason(returnRequest.getReason());
-        dto.setImageUrls(convertJsonToList(returnRequest.getImageUrls()));
-        dto.setVideoUrls(convertJsonToList(returnRequest.getVideoUrls()));
-        return dto;
-    }
-
-    private List<String> convertJsonToList(String json) {
-        return json != null ? new Gson().fromJson(json, new TypeToken<List<String>>() {}.getType()) : new ArrayList<>();
-    }
-
-
-    private List<String> parseJsonToList(String json) {
-        return new Gson().fromJson(json, new TypeToken<List<String>>() {}.getType());
-    }
-
     public Long getTotalSoldQuantityByProductId(Integer productId) {
         Long totalSold = jpaOrderDetail.getTotalSoldQuantityByProductId(productId);
         return totalSold != null ? totalSold : 0L;
     }
-
-
 
     @Transactional
     public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
@@ -547,24 +469,24 @@ public class OrderService {
         LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
         Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
 
-		if (recentOrder.isPresent()) {
-			System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
-			return recentOrder.get();
-		}
+        if (recentOrder.isPresent()) {
+            System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
+            return recentOrder.get();
+        }
 
-		OrderEntity order = new OrderEntity();
-		order.setUser(user);
-		order.setOrderDate(LocalDateTime.now());
-		order.setAddress("Địa chỉ mặc định");
-		order.setPaymentMethod("VNPAY");
-		order.setStatus(0); // Pending
-		order.setPaymentStatus(1); // Đã thanh toán
-		order.setShippingFee(BigDecimal.valueOf(10000));
-		order.setDiscountAmount(BigDecimal.ZERO);
-		order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+        OrderEntity order = new OrderEntity();
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
+        order.setAddress("Địa chỉ mặc định");
+        order.setPaymentMethod("VNPAY");
+        order.setStatus(0); // Pending
+        order.setPaymentStatus(1); // Đã thanh toán
+        order.setShippingFee(BigDecimal.valueOf(10000));
+        order.setDiscountAmount(BigDecimal.ZERO);
+        order.setTotalAmount(BigDecimal.valueOf(totalAmount));
 
-		return orderRepository.save(order);
-	}
+        return orderRepository.save(order);
+    }
 
 
 }
