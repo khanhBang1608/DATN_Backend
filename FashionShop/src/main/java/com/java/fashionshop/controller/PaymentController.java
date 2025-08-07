@@ -91,7 +91,7 @@ public class PaymentController {
                     String userEmail = extractEmailFromOrderInfo(vnp_OrderInfo);
                     int paidAmount = Integer.parseInt(vnp_Amount) / 100;
 
-                    orderService.createOrderAfterVnpaySuccess(userEmail, paidAmount);
+//                    orderService.createOrderAfterVnpaySuccess(userEmail, paidAmount);
 
                     String rawPayDate = params.get("vnp_PayDate");
                     DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");

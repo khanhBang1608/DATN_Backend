@@ -444,30 +444,30 @@ public class OrderService {
 		return totalSold != null ? totalSold : 0L;
 	}
 
-	@Transactional
-	public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
-		UserEntity user = userRepository.findByEmail(userEmail)
-				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
-		LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
-		Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
-
-		if (recentOrder.isPresent()) {
-			System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
-			return recentOrder.get();
-		}
-
-		OrderEntity order = new OrderEntity();
-		order.setUser(user);
-		order.setOrderDate(LocalDateTime.now());
-		order.setAddress("Địa chỉ mặc định");
-		order.setPaymentMethod("VNPAY");
-		order.setStatus(0); // Pending
-		order.setPaymentStatus(1); // Đã thanh toán
-		order.setShippingFee(BigDecimal.valueOf(10000));
-		order.setDiscountAmount(BigDecimal.ZERO);
-		order.setTotalAmount(BigDecimal.valueOf(totalAmount));
-
-		return orderRepository.save(order);
-	}
+//	@Transactional
+//	public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
+//		UserEntity user = userRepository.findByEmail(userEmail)
+//				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
+//		LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
+//		Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
+//
+//		if (recentOrder.isPresent()) {
+//			System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
+//			return recentOrder.get();
+//		}
+//
+//		OrderEntity order = new OrderEntity();
+//		order.setUser(user);
+//		order.setOrderDate(LocalDateTime.now());
+//		order.setAddress("Địa chỉ mặc định");
+//		order.setPaymentMethod("VNPAY");
+//		order.setStatus(0); // Pending
+//		order.setPaymentStatus(1); // Đã thanh toán
+//		order.setShippingFee(BigDecimal.valueOf(10000));
+//		order.setDiscountAmount(BigDecimal.ZERO);
+//		order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+//
+//		return orderRepository.save(order);
+//	}
 
 }
