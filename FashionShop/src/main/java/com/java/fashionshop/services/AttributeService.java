@@ -26,7 +26,18 @@ public class AttributeService {
     public Page<ColorsEntity> getAllColors(Pageable pageable) {
         return jpaColors.findAll(pageable);
     }
+    
+    
+    //tim kiem theo ten
+    public Page<ColorsEntity> searchColorsByName(String keyword, Pageable pageable) {
+        return jpaColors.findByColorNameContainingIgnoreCase(keyword, pageable);
+    }
+    public Page<SizesEntity> searchSizesByName(String keyword, Pageable pageable) {
+        return jpaSizes.findBySizeNameContainingIgnoreCase(keyword, pageable);
+    }
 
+    
+    
     public Optional<ColorsEntity> getColorById(Integer id) {
         return jpaColors.findById(id);
     }
