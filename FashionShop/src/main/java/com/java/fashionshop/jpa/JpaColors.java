@@ -10,4 +10,8 @@ public interface JpaColors extends JpaRepository<ColorsEntity, Integer> {
 	boolean existsByColorNameIgnoreCase(String colorName);
 
 	Page<ColorsEntity> findAll(Pageable pageable);
+	
+	Page<ColorsEntity> findByColorNameContainingIgnoreCase(String keyword, Pageable pageable);
+
+
 }
