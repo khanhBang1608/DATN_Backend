@@ -56,12 +56,15 @@ import com.java.fashionshop.services.CustomUserDetailsService;
                                 "/api/user/reviews/**",
                                 "/api/user/address/**",
                                 "/api/user/orders/**",
-                                "/images/**"// 👈 VD thêm nếu có danh sách sản phẩm
+                                "/api/user/payment/**",
+                                "/images/**",
+                                "/videos/**"// 👈 VD thêm nếu có danh sách sản phẩm
                             ).permitAll()
-                    .requestMatchers("/images/**").permitAll()
+                    .requestMatchers("/images/**","/videos/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/address/").hasAnyRole("USER","ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/user/reviews").hasAnyRole("USER","ADMIN")
-                    .requestMatchers("/images/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/payment/").hasAnyRole("USER","ADMIN")
+                    .requestMatchers("/images/**", "/videos/**").permitAll()
 
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/user/**").hasRole("USER")
