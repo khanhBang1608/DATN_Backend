@@ -43,4 +43,5 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 	@Query("SELECT o FROM OrderEntity o WHERE o.user.email = :email AND o.paymentStatus = 1 AND o.orderDate >= :limitTime")
 	Optional<OrderEntity> findRecentOrder(@Param("email") String email, @Param("limitTime") LocalDateTime limitTime);
 
+	Optional<OrderEntity> findByTxnRef(String txnRef);
 }

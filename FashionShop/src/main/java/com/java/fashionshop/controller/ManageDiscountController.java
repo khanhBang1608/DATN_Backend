@@ -10,20 +10,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
-public class DiscountController {
+public class ManageDiscountController {
 
     @Autowired
     private DiscountService discountService;
 
-    @GetMapping("/discount/findAll")
-    public List<DiscountDTO> getAll() {
-        return discountService.getAllDTOs();
+    @GetMapping("/discount/paging")
+    public ResponseEntity<Page<DiscountDTO>> getAllPaging(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DiscountDTO> dtoPage = discountService.getDiscountDTOs(pageable);
+        return ResponseEntity.ok(dtoPage);
     }
 
     @GetMapping("/discount/findById/{id}")

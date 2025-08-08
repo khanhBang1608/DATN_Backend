@@ -1,4 +1,4 @@
-package com.java.fashionshop.jpa;
+ package com.java.fashionshop.jpa;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,9 +14,12 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 	boolean existsById(Integer id);
 	@Query("SELECT DISTINCT p FROM ProductEntity p JOIN FETCH p.variants v WHERE p.status = true ORDER BY p.dateCreated DESC")
 	List<ProductEntity> findTop10WithVariants(Pageable pageable);
-	
+	@Query("SELECT p.productId, SUM(v.stock) FROM ProductEntity p JOIN p.variants v GROUP BY p.productId")
+	List<Object[]> findTotalStockPerProduct();
 	List<ProductEntity> findByCategory_CategoryId(Integer categoryId);
-	
+	@Query("SELECT SUM(v.stock) FROM ProductEntity p JOIN p.variants v WHERE p.productId = :productId")
+	Long getTotalStockByProductId(@Param("productId") Integer productId);
+
 	@Query(
 		    value = "SELECT * FROM product WHERE LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
 		    nativeQuery = true
@@ -24,5 +27,6 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 		List<ProductEntity> searchByName(@Param("keyword") String keyword);
 	Page<ProductEntity> findAllByStatusTrueOrderByDateCreatedDesc(Pageable pageable);
 	Page<ProductEntity> findAll(Pageable pageable);
+
 
 }

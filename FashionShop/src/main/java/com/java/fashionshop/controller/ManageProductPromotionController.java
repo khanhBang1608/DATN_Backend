@@ -36,9 +36,12 @@ public class ManageProductPromotionController {
     }
 
     @GetMapping("/promotion/{promotionId}")
-    public ResponseEntity<List<ProductPromotionDTO>> getByPromotionId(@PathVariable Integer promotionId) {
-        List<ProductPromotionDTO> list = service.findByPromotionId(promotionId);
-        return ResponseEntity.ok(list);
+    public ResponseEntity<?> getByPromotionIdPaged(
+            @PathVariable Integer promotionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return ResponseEntity.ok(service.findByPromotionIdPaged(promotionId, page, size));
     }
 
     @GetMapping

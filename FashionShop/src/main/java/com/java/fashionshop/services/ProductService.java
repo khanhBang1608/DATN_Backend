@@ -5,8 +5,12 @@ import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.CategoryEntity;
 import com.java.fashionshop.entity.ProductEntity;
+import com.java.fashionshop.jpa.JpaCartDetail;
 import com.java.fashionshop.jpa.JpaCategory;
+import com.java.fashionshop.jpa.JpaFavorite;
 import com.java.fashionshop.jpa.JpaProduct;
+import com.java.fashionshop.jpa.JpaProductViews;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +31,12 @@ public class ProductService {
 
 	@Autowired
 	private JpaCategory jpaCategory;
+	@Autowired
+    private JpaFavorite jpaFavorite;
+	@Autowired
+    private JpaProductViews jpaProductViews;
+	@Autowired
+    private JpaCartDetail jpaCartDetail;
 
 	// Lấy tất cả sản phẩm
 	public List<ProductBean> findAll() {
@@ -40,7 +49,8 @@ public class ProductService {
 
 		// Chuyển đổi entity -> DTO, và chỉ giữ lại các sản phẩm có variant
 		List<ProductDTO> filteredDTOs = productPage.stream().map(this::convertToDTO)
-				.filter(dto -> dto.getVariants() != null && !dto.getVariants().isEmpty()).toList();
+				.filter(dto -> dto.getVariants() != null && !dto.getVariants().isEmpty())
+				.filter(dto -> Boolean.TRUE.equals(dto.getStatus()) && Boolean.TRUE.equals(dto.getCategoryStatus())).toList();
 
 		// Trả về Page thủ công (nếu đã filter mất phần tử)
 		return new PageImpl<>(filteredDTOs, pageable, productPage.getTotalElements());
@@ -118,49 +128,62 @@ public class ProductService {
 		return bean;
 	}
 
-	// Chuyển đổi ProductEntity sang ProductDTO
-	public ProductDTO convertToDTO(ProductEntity product) {
-		ProductDTO dto = new ProductDTO();
-		dto.setProductId(product.getProductId());
-		dto.setName(product.getName());
-		dto.setDescription(product.getDescription());
-		dto.setStatus(product.getStatus());
-		dto.setDateCreated(product.getDateCreated());
-		dto.setViewCount(product.getViewCount() != null ? product.getViewCount() : 0); // Thêm viewCount
+public ProductDTO convertToDTO(ProductEntity product) {
+        ProductDTO dto = new ProductDTO();
+        dto.setProductId(product.getProductId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setStatus(product.getStatus());
+        dto.setDateCreated(product.getDateCreated());
 
-		if (product.getCategory() != null) {
-			dto.setCategoryId(product.getCategory().getCategoryId());
-			dto.setCategoryName(product.getCategory().getCategoryName());
-		}
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getCategoryId());
+            dto.setCategoryName(product.getCategory().getCategoryName());
+            dto.setCategoryStatus(product.getCategory().isStatus());
+        }
 
-		if (product.getVariants() != null) {
-			List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
-				ProductVariantDTO variantDTO = new ProductVariantDTO();
-				variantDTO.setProductVariantId(variant.getProductVariantId());
-				variantDTO.setStock(variant.getStock());
-				variantDTO.setPrice(variant.getPrice());
-				variantDTO.setImageName(variant.getImageName());
+        // 1️⃣ Lấy số lượt yêu thích
+        Long favoriteCount = jpaFavorite.countByProductId(product.getProductId());
+        dto.setFavoriteCount(favoriteCount != null ? favoriteCount.intValue() : 0);
 
-				if (variant.getColor() != null) {
-					variantDTO.setColorId(variant.getColor().getColorId());
-					variantDTO.setColorName(variant.getColor().getColorName());
-				}
+        // 2️⃣ Lấy số lượt xem
+        dto.setViewCount(product.getViewCount() != null ? product.getViewCount() : 0);
 
-				if (variant.getSize() != null) {
-					variantDTO.setSizeId(variant.getSize().getSizeId());
-					variantDTO.setSizeName(variant.getSize().getSizeName());
-				}
+        // 3️⃣ Lấy số lượt trong giỏ hàng
+        Integer cartCount = jpaCartDetail.countByProductId(product.getProductId());
+        dto.setCartCount(cartCount != null ? cartCount : 0);
 
-				return variantDTO;
-			}).collect(Collectors.toList());
+        // 4️⃣ Danh sách biến thể
+        if (product.getVariants() != null) {
+            List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+                ProductVariantDTO variantDTO = new ProductVariantDTO();
+                variantDTO.setProductVariantId(variant.getProductVariantId());
+                variantDTO.setStock(variant.getStock());
+                variantDTO.setPrice(variant.getPrice());
+                variantDTO.setImageName(variant.getImageName());
 
-			dto.setVariants(variantDTOs);
-		} else {
-			dto.setVariants(new ArrayList<>());
-		}
+                if (variant.getColor() != null) {
+                    variantDTO.setColorId(variant.getColor().getColorId());
+                    variantDTO.setColorName(variant.getColor().getColorName());
+                }
 
-		return dto;
-	}
+                if (variant.getSize() != null) {
+                    variantDTO.setSizeId(variant.getSize().getSizeId());
+                    variantDTO.setSizeName(variant.getSize().getSizeName());
+                }
+
+                return variantDTO;
+            }).toList();
+
+            dto.setVariants(variantDTOs);
+        } else {
+            dto.setVariants(List.of());
+        }
+
+        return dto;
+    }
+
+
 
 	public Page<ProductEntity> findTopNewestProductsWithVariants(Pageable pageable) {
 	    return jpaProduct.findAllByStatusTrueOrderByDateCreatedDesc(pageable);

@@ -35,6 +35,6 @@ public class ProductVariantBean {
     @Min(value = 0, message = "Số lượng tồn kho phải lớn hơn hoặc bằng 0.")
     private Integer stock;
 
-    @NotNull(message = "Vui lòng chọn ảnh.")
+ 
     private MultipartFile image;
 }
