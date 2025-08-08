@@ -87,7 +87,13 @@ public class OrderService {
 	@Transactional
 	public OrderDTO createOrder(OrderCreateRequest request) {
 		Integer userId = getAuthenticatedUserId();
-
+		if (request.getIdempotencyKey() != null) {
+			OrderEntity existingOrder = orderRepository
+					.findByIdempotencyKey((request.getIdempotencyKey()));
+			if (existingOrder != null) {
+				return convertToDTO(existingOrder);
+			}
+		}
 		UserEntity user = userRepository.findById(userId)
 				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với id: " + userId));
 
@@ -95,6 +101,7 @@ public class OrderService {
 		order.setUser(user);
 		order.setOrderDate(LocalDateTime.now());
 		order.setAddress(request.getAddress());
+		order.setIdempotencyKey(request.getIdempotencyKey());
 		order.setPaymentMethod(request.getPaymentMethod());
 		order.setStatus(0); // 0: Pending
 		if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {

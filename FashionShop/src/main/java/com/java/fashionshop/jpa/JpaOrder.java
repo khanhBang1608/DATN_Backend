@@ -44,4 +44,7 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 	Optional<OrderEntity> findRecentOrder(@Param("email") String email, @Param("limitTime") LocalDateTime limitTime);
 
 	Optional<OrderEntity> findByTxnRef(String txnRef);
+
+
+	OrderEntity findByIdempotencyKey(String idempotencyKey);
 }

@@ -60,7 +60,8 @@ public class PaymentService {
 			String discountCode,
 			BigDecimal discountAmount,
 			BigDecimal shippingFee,
-			List<PaymentRequest.OrderDetailRequest> orderDetails) {
+			List<PaymentRequest.OrderDetailRequest> orderDetails,
+	String idempotencyKey) {
 		if (address == null || address.trim().isEmpty()) {
 			throw new IllegalArgumentException("Địa chỉ không được để trống");
 		}
@@ -68,9 +69,23 @@ public class PaymentService {
 			throw new IllegalArgumentException("Chi tiết đơn hàng không được để trống");
 		}
 
+		if (idempotencyKey != null) {
+			OrderEntity existingOrder = orderRepository.findByIdempotencyKey(idempotencyKey);
+			if (existingOrder != null) {
+				String paymentUrl = createPaymentUrl(
+						existingOrder.getTotalAmount().intValue(),
+						"txnRef=" + existingOrder.getTxnRef(),
+						user.getUserId(),
+						existingOrder.getTxnRef()
+				);
+				return Collections.singletonMap("paymentUrl", paymentUrl);
+			}
+		}
+
 		String txnRef = PaymentConfig.getRandomNumber(8);
 		OrderEntity order = new OrderEntity();
 		order.setUser(user);
+		order.setIdempotencyKey(idempotencyKey);
 		order.setTxnRef(txnRef);
 		order.setTotalAmount(BigDecimal.valueOf(totalAmount));
 		order.setOrderDate(LocalDateTime.now());

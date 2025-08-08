@@ -19,6 +19,7 @@ public class PaymentRequest {
     private BigDecimal discountAmount;
     private BigDecimal shippingFee;
     private List<OrderDetailRequest> orderDetails;
+    private String idempotencyKey;
 
     @Data
     @NoArgsConstructor

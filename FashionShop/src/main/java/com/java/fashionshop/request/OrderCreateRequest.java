@@ -19,6 +19,8 @@ public class OrderCreateRequest {
     private BigDecimal ShippingFee;
 
     private List<OrderDetailRequest> orderDetails;
+
+    private String idempotencyKey;
     private Integer status;
  
     @Data

@@ -74,7 +74,8 @@ public class PaymentController {
                 request.getDiscountCode(),
                 request.getDiscountAmount(),
                 request.getShippingFee(),
-                request.getOrderDetails()
+                request.getOrderDetails(),
+                request.getIdempotencyKey()
         );
         return ResponseEntity.ok(response);
     }

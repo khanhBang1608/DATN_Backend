@@ -55,6 +55,9 @@ public class OrderEntity {
 	@Column(name = "txn_ref", length = 50, unique = true)
 	private String txnRef;
 
+	@Column(name = "idempotency_key" )
+	private String idempotencyKey;
+
 	// Quan hệ với OrderDetail
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderDetailEntity> orderDetails = new ArrayList<>();
