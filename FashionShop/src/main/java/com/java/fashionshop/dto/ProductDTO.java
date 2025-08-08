@@ -16,5 +16,7 @@ public class ProductDTO {
     private String categoryName;
     private Boolean categoryStatus;
     private Integer viewCount;
+    private int totalStock;
     private List<ProductVariantDTO> variants;
+    
 }

@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import com.java.fashionshop.bean.ProductBean;
 import com.java.fashionshop.bean.ProductVariantBean;
 import com.java.fashionshop.dto.ProductDTO;
+import com.java.fashionshop.dto.ProductStockDTO;
 import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.ProductEntity;
@@ -87,7 +88,18 @@ public class ManageProductController {
 	                      .map(this::convertToDTO)
 	                      .toList();
 	 }
-	 
+	 @GetMapping("/total-stock/{id}")
+	 public ResponseEntity<ProductStockDTO> getTotalStockByProductId(@PathVariable("id") Integer productId) {
+	     Long totalStock = jpaProduct.getTotalStockByProductId(productId);
+
+	     if (totalStock != null) {
+	         return ResponseEntity.ok(new ProductStockDTO(productId, totalStock));
+	     } else {
+	         return ResponseEntity.notFound().build();
+	     }
+	 }
+
+
 	 @GetMapping("/products")
 	 public ResponseEntity<?> getAllProductsPaged(
 	         @RequestParam(defaultValue = "0") int page,

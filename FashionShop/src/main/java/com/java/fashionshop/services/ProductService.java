@@ -121,48 +121,53 @@ public class ProductService {
 
 	// Chuyển đổi ProductEntity sang ProductDTO
 	public ProductDTO convertToDTO(ProductEntity product) {
-		ProductDTO dto = new ProductDTO();
-		dto.setProductId(product.getProductId());
-		dto.setName(product.getName());
-		dto.setDescription(product.getDescription());
-		dto.setStatus(product.getStatus());
-		dto.setDateCreated(product.getDateCreated());
-		dto.setViewCount(product.getViewCount() != null ? product.getViewCount() : 0); // Thêm viewCount
+	    ProductDTO dto = new ProductDTO();
+	    dto.setProductId(product.getProductId());
+	    dto.setName(product.getName());
+	    dto.setDescription(product.getDescription());
+	    dto.setStatus(product.getStatus());
+	    dto.setDateCreated(product.getDateCreated());
 
-		if (product.getCategory() != null) {
-			dto.setCategoryId(product.getCategory().getCategoryId());
-			dto.setCategoryName(product.getCategory().getCategoryName());
-			dto.setCategoryStatus(product.getCategory().isStatus());
-		}
+	    if (product.getCategory() != null) {
+	        dto.setCategoryId(product.getCategory().getCategoryId());
+	        dto.setCategoryName(product.getCategory().getCategoryName());
+	        dto.setCategoryStatus(product.getCategory().isStatus());
+	    }
 
-		if (product.getVariants() != null) {
-			List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
-				ProductVariantDTO variantDTO = new ProductVariantDTO();
-				variantDTO.setProductVariantId(variant.getProductVariantId());
-				variantDTO.setStock(variant.getStock());
-				variantDTO.setPrice(variant.getPrice());
-				variantDTO.setImageName(variant.getImageName());
+	    if (product.getVariants() != null) {
+	        List<ProductVariantDTO> variantDTOs = product.getVariants().stream().map(variant -> {
+	            ProductVariantDTO variantDTO = new ProductVariantDTO();
+	            variantDTO.setProductVariantId(variant.getProductVariantId());
+	            variantDTO.setStock(variant.getStock());
+	            variantDTO.setPrice(variant.getPrice());
+	            variantDTO.setImageName(variant.getImageName());
 
-				if (variant.getColor() != null) {
-					variantDTO.setColorId(variant.getColor().getColorId());
-					variantDTO.setColorName(variant.getColor().getColorName());
-				}
+	            if (variant.getColor() != null) {
+	                variantDTO.setColorId(variant.getColor().getColorId());
+	                variantDTO.setColorName(variant.getColor().getColorName());
+	            }
 
-				if (variant.getSize() != null) {
-					variantDTO.setSizeId(variant.getSize().getSizeId());
-					variantDTO.setSizeName(variant.getSize().getSizeName());
-				}
+	            if (variant.getSize() != null) {
+	                variantDTO.setSizeId(variant.getSize().getSizeId());
+	                variantDTO.setSizeName(variant.getSize().getSizeName());
+	            }
 
-				return variantDTO;
-			}).collect(Collectors.toList());
+	            return variantDTO;
+	        }).toList();
 
-			dto.setVariants(variantDTOs);
-		} else {
-			dto.setVariants(new ArrayList<>());
-		}
+	        dto.setVariants(variantDTOs);
+	    } else {
+	        dto.setVariants(List.of());
+	    }
 
-		return dto;
+	    // ✅ Lấy tổng stock và set vào DTO
+	 // ✅ Lấy tổng stock và set vào DTO (giữ kiểu int)
+	    Long totalStock = jpaProduct.getTotalStockByProductId(product.getProductId());
+	    dto.setTotalStock(totalStock != null ? totalStock.intValue() : 0);
+	    return dto;
 	}
+
+
 
 	public Page<ProductEntity> findTopNewestProductsWithVariants(Pageable pageable) {
 	    return jpaProduct.findAllByStatusTrueOrderByDateCreatedDesc(pageable);
