@@ -18,41 +18,39 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequiredArgsConstructor
 public class ManageDashboardController {
 	@Autowired
 	private JpaOrder orderRepository;
 
-    private final JpaUser jpaUser;
-    private final JpaCategory jpaCategory;
-    private final JpaProduct jpaProduct;
-    private final JpaOrder jpaOrder;
-    private final JpaReview jpaReview;
+	private final JpaUser jpaUser;
+	private final JpaCategory jpaCategory;
+	private final JpaProduct jpaProduct;
+	private final JpaOrder jpaOrder;
+	private final JpaReview jpaReview;
 
-    @GetMapping("/api/admin/dashboard/stats")
-    public DashboardStatsDTO getDashboardStats() {
-    	long userCount = jpaUser.countByRole(1);
-        long totalCategories = jpaCategory.count();
-        long totalProducts = jpaProduct.count();
-        long totalOrders = jpaOrder.count();
-        long totalReviews = jpaReview.count();
-        BigDecimal totalRevenue = jpaOrder.getTotalRevenueWithPaymentStatus1();
+	@GetMapping("/api/admin/dashboard/stats")
+	public DashboardStatsDTO getDashboardStats() {
+		long userCount = jpaUser.countByRole(1);
+		long totalCategories = jpaCategory.count();
+		long totalProducts = jpaProduct.count();
+		long totalOrders = jpaOrder.count();
+		long totalReviews = jpaReview.count();
+		BigDecimal totalRevenue = jpaOrder.getTotalRevenueWithPaymentStatus1();
 
-        return new DashboardStatsDTO(
-        		userCount,
-                totalCategories,
-                totalProducts,
-                totalOrders,
-                totalReviews,
-                totalRevenue
-        );
-    }
-    
-    @GetMapping("/api/admin/dashboard/stats/monthly-revenue")
-    public ResponseEntity<List<Map<String, Object>>> getMonthlyRevenue() {
-        return ResponseEntity.ok(orderRepository.getMonthlyRevenue());
-    }
+		return new DashboardStatsDTO(userCount, totalCategories, totalProducts, totalOrders, totalReviews,
+				totalRevenue);
+	}
+
+	@GetMapping("/api/admin/dashboard/stats/monthly-revenue")
+	public ResponseEntity<List<Map<String, Object>>> getMonthlyRevenue() {
+		return ResponseEntity.ok(orderRepository.getMonthlyRevenue());
+	}
+
+	@GetMapping("/api/admin/dashboard/stats/monthly-user-registrations")
+	public ResponseEntity<List<Map<String, Object>>> getMonthlyUserRegistrations() {
+		return ResponseEntity.ok(jpaUser.countUsersByMonthYear());
+	}
 
 }
