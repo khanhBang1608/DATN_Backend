@@ -20,7 +20,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -129,12 +131,12 @@ public class OrderService {
             detail.setPrice(price); // ✅ dùng giá từ request nếu có
             detail.setProductVariant(variant);
 
-            order.getOrderDetails().add(detail);
-            totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
-        }
-
-        order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
-        order = orderRepository.save(order);
+			order.getOrderDetails().add(detail);
+			totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
+		}
+		adjustStockForOrder(order, false);
+		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+		order = orderRepository.save(order);
 
         return convertToDTO(order);
     }
@@ -145,11 +147,8 @@ public class OrderService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với id: " + userId));
 
-        return orderRepository.findByUser(user)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
+		return orderRepository.findByUser(user).stream().map(this::convertToDTO).collect(Collectors.toList());
+	}
 
     public OrderDTO getOrderDetails(Integer orderId) {
         Integer userId = getAuthenticatedUserId();
@@ -262,7 +261,7 @@ public class OrderService {
         OrderEntity order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        // Hoàn stock nếu order ở trạng thái 3
+		// Hoàn stock nếu order ở trạng thái 3
         if (order.getStatus() == 3) {
             adjustStockForOrder(order, true);
         }
@@ -540,6 +539,5 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
-
 
 }

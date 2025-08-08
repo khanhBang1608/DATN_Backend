@@ -33,13 +33,22 @@ public class ManageAttributeController {
     // -------- COLORS --------
     @GetMapping("/colors")
     public ResponseEntity<Page<ColorsEntity>> getColorsPaginated(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search // <- thêm dòng này
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ColorsEntity> result = attributeService.getAllColors(pageable);
+        Page<ColorsEntity> result;
+
+        if (search != null && !search.trim().isEmpty()) {
+            result = attributeService.searchColorsByName(search.trim(), pageable);
+        } else {
+            result = attributeService.getAllColors(pageable);
+        }
+
         return ResponseEntity.ok(result);
     }
+
 
     @PostMapping("/colors")
     public ResponseEntity<?> createColor(@RequestBody @Valid ColorBean colorBean, BindingResult result) {
@@ -101,12 +110,21 @@ public class ManageAttributeController {
     @GetMapping("/sizes")
     public ResponseEntity<Page<SizesEntity>> getSizesPaginated(
         @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) String search
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<SizesEntity> result = attributeService.getAllSizes(pageable);
+        Page<SizesEntity> result;
+
+        if (search != null && !search.trim().isEmpty()) {
+            result = attributeService.searchSizesByName(search.trim(), pageable);
+        } else {
+            result = attributeService.getAllSizes(pageable);
+        }
+
         return ResponseEntity.ok(result);
     }
+
 
     @PostMapping("/sizes")
     public ResponseEntity<?> createSize(@RequestBody SizesEntity size) {

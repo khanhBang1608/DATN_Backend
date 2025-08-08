@@ -10,4 +10,7 @@ public interface JpaSizes extends JpaRepository<SizesEntity, Integer> {
 	boolean existsBySizeNameIgnoreCase(String sizeName);
 
 	Page<SizesEntity> findAll(Pageable pageable);
+	
+	Page<SizesEntity> findBySizeNameContainingIgnoreCase(String keyword, Pageable pageable);
+
 }

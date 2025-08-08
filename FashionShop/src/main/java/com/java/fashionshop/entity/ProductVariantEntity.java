@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor 
 @AllArgsConstructor
 @Table(name = "product_varian")
-public class ProductVariantEntity {
+public class ProductVariantEntity {	
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer productVariantId;
 
