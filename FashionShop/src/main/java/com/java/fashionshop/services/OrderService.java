@@ -2,11 +2,23 @@ package com.java.fashionshop.services;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import com.java.fashionshop.dto.*;
 import com.java.fashionshop.entity.*;
 import com.java.fashionshop.jpa.*;
@@ -28,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +66,10 @@ public class OrderService {
 
 	@Autowired
 	private JpaOrderReturnEntity jpaOrderReturnEntity;
+
+	public OrderEntity save(OrderEntity order) {
+		return orderRepository.save(order);
+	}
 
     private Integer getAuthenticatedUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -338,44 +355,168 @@ public class OrderService {
         return convertToDTO(order);
     }
 
-    public byte[] exportInvoicePdf(Integer orderId) {
-        OrderEntity order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+	public byte[] exportInvoicePdf(Integer orderId) {
+		OrderEntity order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
 
-            document.add(new Paragraph("Hóa đơn của đơn hàng #" + order.getOrderId()));
-            document.add(new Paragraph("Khách hàng: " + order.getUser().getFullName()));
-            document.add(new Paragraph("Địa chỉ: " + order.getAddress()));
-            document.add(new Paragraph("Ngày đặt hàng: " + order.getOrderDate()));
-            document.add(new Paragraph("Phương thức thanh toán: " + order.getPaymentMethod()));
-            document.add(new Paragraph("Trạng thái đơn hàng: " + order.getStatus()));
-            document.add(new Paragraph("Tổng tiền: " + order.getTotalAmount()));
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			PdfWriter writer = new PdfWriter(baos);
+			PdfDocument pdf = new PdfDocument(writer);
+			Document document = new Document(pdf, PageSize.A4);
+			document.setMargins(30, 30, 30, 30);
 
-            float[] columnWidths = {1, 3, 1, 2};
-            Table table = new Table(columnWidths);
-            table.addCell("Quantity");
-            table.addCell("Product");
-            table.addCell("Price");
-            table.addCell("Total");
+			PdfFont font = PdfFontFactory.createFont("src/main/resources/static/fonts/DejaVuSans.ttf", PdfEncodings.IDENTITY_H);
+			PdfFont boldFont = PdfFontFactory.createFont("src/main/resources/static/fonts/DejaVuSans-Bold.ttf", PdfEncodings.IDENTITY_H);
+			DeviceRgb brandColor = new DeviceRgb(0, 102, 204);
 
-            for (OrderDetailEntity detail : order.getOrderDetails()) {
-                table.addCell(String.valueOf(detail.getQuantity()));
-                table.addCell(detail.getProductVariant().getProduct().getName());
-                table.addCell(String.valueOf(detail.getPrice()));
-                table.addCell(String.valueOf(detail.getPrice().multiply(new BigDecimal(detail.getQuantity()))));
-            }
+			Paragraph title = new Paragraph("HÓA ĐƠN BÁN HÀNG")
+					.setFont(boldFont)
+					.setFontSize(20)
+					.setTextAlignment(TextAlignment.CENTER)
+					.setFontColor(brandColor)
+					.setMarginBottom(10);
+			document.add(title);
 
-            document.add(table);
-            document.close();
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi tạo PDF", e);
-        }
-    }
+			document.add(new Paragraph("CÔNG TY CỔ PHẦN MAISON RETAIL MANAGEMENT INTERNATIONAL")
+					.setFont(boldFont)
+					.setFontSize(12)
+					.setTextAlignment(TextAlignment.LEFT));
+			document.add(new Paragraph("Địa chỉ: Toà nhà FPT Polytechnic, Đ. Số 22, Thường Thạnh, Cái Răng, Cần Thơ")
+					.setFont(font)
+					.setFontSize(10));
+			document.add(new Paragraph("Số điện thoại:  0378 447 716 | Email: customers@lhex.vn")
+					.setFont(font)
+					.setFontSize(10)
+					.setMarginBottom(20));
+
+			document.add(new Paragraph("")
+					.setBorderBottom(new SolidBorder(brandColor, 1))
+					.setMarginBottom(10));
+
+			Table infoTable = new Table(UnitValue.createPercentArray(new float[]{1, 1}));
+			infoTable.setWidth(UnitValue.createPercentValue(100));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Mã hóa đơn: #" + order.getOrderId()).setFont(boldFont).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Ngày xuất: " + LocalDateTime.now().format(dateTimeFormatter))
+							.setFont(font).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Khách hàng: " + order.getUser().getFullName()).setFont(boldFont).setFontSize(10)));
+			if (order.getOrderDate() instanceof LocalDateTime) {
+				infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+						.add(new Paragraph("Ngày đặt hàng: " + ((LocalDateTime) order.getOrderDate()).format(dateTimeFormatter))
+								.setFont(font).setFontSize(10)));
+			} else {
+				infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+						.add(new Paragraph("Ngày đặt hàng: " + order.getOrderDate().toString())
+								.setFont(font).setFontSize(10)));
+			}
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Địa chỉ: " + order.getAddress()).setFont(font).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Phương thức thanh toán: " + order.getPaymentMethod()).setFont(font).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Trạng thái thanh toán: " + (order.getPaymentStatus() == 1 ? "Đã thanh toán" : "Chưa thanh toán"))
+							.setFont(font).setFontSize(10)));
+			document.add(infoTable);
+			document.add(new Paragraph("").setMarginBottom(20));
+
+			// Bảng chi tiết đơn hàng
+			float[] columnWidths = {1, 4, 1, 2, 2};
+			Table table = new Table(UnitValue.createPercentArray(columnWidths));
+			table.setWidth(UnitValue.createPercentValue(100));
+			table.setBorder(new SolidBorder(ColorConstants.LIGHT_GRAY, 1));
+
+			// Tiêu đề bảng
+			table.addHeaderCell(new Cell().setBackgroundColor(brandColor)
+					.setFont(boldFont).setFontSize(10).setFontColor(ColorConstants.WHITE)
+					.setTextAlignment(TextAlignment.CENTER)
+					.add(new Paragraph("STT")));
+			table.addHeaderCell(new Cell().setBackgroundColor(brandColor)
+					.setFont(boldFont).setFontSize(10).setFontColor(ColorConstants.WHITE)
+					.setTextAlignment(TextAlignment.CENTER)
+					.add(new Paragraph("Sản phẩm")));
+			table.addHeaderCell(new Cell().setBackgroundColor(brandColor)
+					.setFont(boldFont).setFontSize(10).setFontColor(ColorConstants.WHITE)
+					.setTextAlignment(TextAlignment.CENTER)
+					.add(new Paragraph("Số lượng")));
+			table.addHeaderCell(new Cell().setBackgroundColor(brandColor)
+					.setFont(boldFont).setFontSize(10).setFontColor(ColorConstants.WHITE)
+					.setTextAlignment(TextAlignment.CENTER)
+					.add(new Paragraph("Đơn giá")));
+			table.addHeaderCell(new Cell().setBackgroundColor(brandColor)
+					.setFont(boldFont).setFontSize(10).setFontColor(ColorConstants.WHITE)
+					.setTextAlignment(TextAlignment.CENTER)
+					.add(new Paragraph("Thành tiền")));
+
+			// Nội dung bảng
+			int index = 1;
+			BigDecimal subtotal = BigDecimal.ZERO;
+			for (OrderDetailEntity detail : order.getOrderDetails()) {
+				BigDecimal total = detail.getPrice().multiply(new BigDecimal(detail.getQuantity()));
+				subtotal = subtotal.add(total);
+
+				table.addCell(new Cell().setFont(font).setFontSize(10).setTextAlignment(TextAlignment.CENTER)
+						.add(new Paragraph(String.valueOf(index++))));
+				table.addCell(new Cell().setFont(font).setFontSize(10)
+						.add(new Paragraph(detail.getProductVariant().getProduct().getName() +
+								" (" + detail.getProductVariant().getSize().getSizeName() + ", " +
+								detail.getProductVariant().getColor().getColorName() + ")")));
+				table.addCell(new Cell().setFont(font).setFontSize(10).setTextAlignment(TextAlignment.CENTER)
+						.add(new Paragraph(String.valueOf(detail.getQuantity()))));
+				table.addCell(new Cell().setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT)
+						.add(new Paragraph(String.format("%,.0f VND", detail.getPrice()))));
+				table.addCell(new Cell().setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT)
+						.add(new Paragraph(String.format("%,.0f VND", total))));
+			}
+			document.add(table);
+			document.add(new Paragraph("").setMarginBottom(20));
+
+			Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{3, 1}));
+			summaryTable.setWidth(UnitValue.createPercentValue(50));
+			summaryTable.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.RIGHT);
+
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Tạm tính").setFont(font).setFontSize(10)));
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph(String.format("%,.0f VND", subtotal)).setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT)));
+
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Phí vận chuyển").setFont(font).setFontSize(10)));
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph(String.format("%,.0f VND", order.getShippingFee())).setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT)));
+
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Giảm giá").setFont(font).setFontSize(10)));
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph(String.format("-%,.0f VND", order.getDiscountAmount())).setFont(font).setFontSize(10).setTextAlignment(TextAlignment.RIGHT)));
+
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Tổng cộng").setFont(boldFont).setFontSize(12)));
+			summaryTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph(String.format("%,.0f VND", order.getTotalAmount())).setFont(boldFont).setFontSize(12).setTextAlignment(TextAlignment.RIGHT)));
+
+			document.add(summaryTable);
+			document.add(new Paragraph("").setMarginBottom(20));
+
+			Paragraph footer = new Paragraph("Cảm ơn quý khách đã mua sắm tại L'Hex Shop!\n" +
+					"Vui lòng liên hệ hỗ trợ qua email customers@lhex.vn hoặc hotline  0378 447 716.")
+					.setFont(font)
+					.setFontSize(10)
+					.setTextAlignment(TextAlignment.CENTER)
+					.setFontColor(ColorConstants.DARK_GRAY)
+					.setMarginTop(10);
+			document.add(footer);
+
+			document.close();
+			return baos.toByteArray();
+		} catch (Exception e) {
+			throw new RuntimeException("Lỗi tạo PDF", e);
+		}
+	}
     public Page<ProductDTO> getBestSellingProducts(Pageable pageable) {
         Page<Object[]> results = orderRepository.findBestSellingProducts(pageable);
         return results.map(result -> {
@@ -514,30 +655,10 @@ public class OrderService {
 		return totalSold != null ? totalSold : 0L;
 	}
 
-	@Transactional
-    public OrderEntity createOrderAfterVnpaySuccess(String userEmail, int totalAmount) {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với email: " + userEmail));
-        LocalDateTime limitTime = LocalDateTime.now().minusMinutes(10);
-        Optional<OrderEntity> recentOrder = orderRepository.findRecentOrder(userEmail, limitTime);
+	public OrderEntity findByTxnRef(String txnRef) {
+		return orderRepository.findByTxnRef(txnRef)
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với mã giao dịch: " + txnRef));
+	}
 
-        if (recentOrder.isPresent()) {
-            System.out.println("❗ Đơn hàng đã tồn tại gần đây cho email: " + userEmail);
-            return recentOrder.get();
-        }
 
-        OrderEntity order = new OrderEntity();
-        order.setUser(user);
-        order.setOrderDate(LocalDateTime.now());
-        order.setAddress("Địa chỉ mặc định");
-        order.setPaymentMethod("VNPAY");
-        order.setStatus(0); // Pending
-        order.setPaymentStatus(1); // Đã thanh toán
-        order.setShippingFee(BigDecimal.valueOf(10000));
-        order.setDiscountAmount(BigDecimal.ZERO);
-        order.setTotalAmount(BigDecimal.valueOf(totalAmount));
-
-        return orderRepository.save(order);
-    }
-
-}
+	}

@@ -34,4 +34,6 @@ public interface JpaOrderDetail extends JpaRepository<OrderDetailEntity, Integer
               AND o.status = 3
         """)
         Long getTotalSoldQuantityByProductId(@Param("productId") Integer productId);
+
+    List<OrderDetailEntity> findByOrder_OrderId(Integer orderId);
 }

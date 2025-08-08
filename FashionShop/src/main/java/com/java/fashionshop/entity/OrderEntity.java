@@ -51,7 +51,10 @@ public class OrderEntity {
 
 	@Column(name = "discount_code", columnDefinition = "VARCHAR(50)")
 	private String discountCode;
-	
+
+	@Column(name = "txn_ref", length = 50, unique = true)
+	private String txnRef;
+
 	// Quan hệ với OrderDetail
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderDetailEntity> orderDetails = new ArrayList<>();
