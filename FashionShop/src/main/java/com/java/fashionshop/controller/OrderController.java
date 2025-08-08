@@ -1,6 +1,5 @@
 package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
-import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.request.OrderCreateRequest;
 import com.java.fashionshop.services.OrderService;
 import jakarta.validation.Valid;

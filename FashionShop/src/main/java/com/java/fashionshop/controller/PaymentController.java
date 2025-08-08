@@ -1,12 +1,9 @@
 package com.java.fashionshop.controller;
 
 import com.java.fashionshop.config.PaymentConfig;
-import com.java.fashionshop.entity.UserEntity;
 import com.java.fashionshop.services.EmailService;
 import com.java.fashionshop.services.OrderService;
 import com.java.fashionshop.services.PaymentService;
-import com.java.fashionshop.services.UserService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,9 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.mail.MessagingException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +24,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Controller
@@ -90,8 +84,6 @@ public class PaymentController {
                 try {
                     String userEmail = extractEmailFromOrderInfo(vnp_OrderInfo);
                     int paidAmount = Integer.parseInt(vnp_Amount) / 100;
-
-//                    orderService.createOrderAfterVnpaySuccess(userEmail, paidAmount);
 
                     String rawPayDate = params.get("vnp_PayDate");
                     DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
