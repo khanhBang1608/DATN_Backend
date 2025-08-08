@@ -143,7 +143,7 @@ public class ManageAttributeController {
     @PutMapping("/sizes/{id}")
     public ResponseEntity<?> updateSize(@PathVariable Integer id, @RequestBody SizesEntity updatedSize) {
         if (updatedSize.getSizeName() == null || updatedSize.getSizeName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("⚠️ Tên size không được để trống.");
+            return ResponseEntity.badRequest().body("Tên size không được để trống.");
         }
 
         Optional<SizesEntity> existing = attributeService.getSizeById(id);
