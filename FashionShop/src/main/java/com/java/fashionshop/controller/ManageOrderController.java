@@ -1,6 +1,7 @@
 package com.java.fashionshop.controller;
 
 import com.java.fashionshop.dto.OrderDTO;
+import com.java.fashionshop.dto.OrderReturnDTO;
 import com.java.fashionshop.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -69,6 +70,11 @@ public class ManageOrderController {
     public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId) {
         orderService.rejectReturn(orderId);
         return ResponseEntity.ok("Đã từ chối yêu cầu trả hàng");
+    }
+
+    @GetMapping("/returns/{orderId}")
+    public ResponseEntity<OrderReturnDTO> getReturnRequest(@PathVariable Integer orderId) {
+        return ResponseEntity.ok(orderService.getReturnRequestByOrderId(orderId));
     }
 
 }
