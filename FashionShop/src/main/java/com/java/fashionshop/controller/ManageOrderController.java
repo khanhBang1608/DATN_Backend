@@ -3,6 +3,7 @@ package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderReturnDTO;
 import com.java.fashionshop.services.OrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,10 +13,11 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+
 
 @RestController
 @RequestMapping("/api/admin/orders")
-@CrossOrigin(origins = "http://localhost:5173")
 @PreAuthorize("hasRole('ADMIN')")
 public class ManageOrderController {
 
@@ -47,24 +49,22 @@ public class ManageOrderController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{orderId}/invoice")
+    @GetMapping("/{orderId}/download-pdf")
     public ResponseEntity<byte[]> downloadInvoice(@PathVariable Integer orderId) {
         byte[] pdfBytes = orderService.exportInvoicePdf(orderId);
 
+        String fileName = "HoaDon-" + orderId + ".pdf";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDisposition(ContentDisposition.builder("attachment")
-                .filename("HoaDon-" + orderId + ".pdf")
-                .build());
+        headers.setContentDisposition(
+                ContentDisposition.inline()
+                        .filename(fileName, StandardCharsets.UTF_8)
+                        .build()
+        );
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
-    @PutMapping("/{orderId}/approve-return")
-    public ResponseEntity<?> approveReturn(@PathVariable Integer orderId) {
-        orderService.acceptReturn(orderId);
-        return ResponseEntity.ok("Trả hàng đã được duyệt");
-    }
 
     @PutMapping("/{orderId}/reject-return")
     public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId) {
