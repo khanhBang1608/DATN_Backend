@@ -66,6 +66,13 @@ public class ManageOrderController {
     }
 
 
+    @PutMapping("/{orderId}/approve-return")
+    public ResponseEntity<?> acceptReturn(@PathVariable Integer orderId) {
+        orderService.acceptReturn(orderId);
+        return ResponseEntity.ok("Đã chấp nhận trả hàng và hoàn tiền");
+    }
+
+
     @PutMapping("/{orderId}/reject-return")
     public ResponseEntity<?> rejectReturn(@PathVariable Integer orderId) {
         orderService.rejectReturn(orderId);

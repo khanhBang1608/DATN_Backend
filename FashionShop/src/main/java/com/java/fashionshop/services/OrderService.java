@@ -158,7 +158,6 @@ public class OrderService {
 			order.getOrderDetails().add(detail);
 			totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
 		}
-		adjustStockForOrder(order, false);
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
 		order = orderRepository.save(order);
 
@@ -271,9 +270,14 @@ public class OrderService {
 		}
 
 		// Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
-		else if (previousStatus == 4 && orderDTO.getStatus() == 6) {
+		else if (previousStatus == 3 && orderDTO.getStatus() == 6) {
 			adjustStockForOrder(order, true);
 			order.setPaymentStatus(2);
+		}
+
+		if (orderDTO.getStatus() == 2 && previousStatus != 2) {
+			// Chuyển sang đang giao hàng => trừ stock
+			adjustStockForOrder(order, false);
 		}
 
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
@@ -611,10 +615,11 @@ public class OrderService {
 		jpaOrderReturnEntity.save(returnRequest);
 
 		order.setStatus(6); // Trả hàng thành công
-		order.setPaymentStatus(0); // Hoàn tiền
+		order.setPaymentStatus(2); // 2 = Hoàn tiền
 		adjustStockForOrder(order, true); // Trả lại hàng vào kho
 		orderRepository.save(order);
 	}
+
 
 	@Transactional
 	public void rejectReturn(Integer orderId) {
