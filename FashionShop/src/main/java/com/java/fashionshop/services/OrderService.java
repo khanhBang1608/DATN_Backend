@@ -370,7 +370,9 @@ public class OrderService {
 	public byte[] exportInvoicePdf(Integer orderId) {
 		OrderEntity order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
-
+		String[] addressParts = order.getAddress().split(" - ", 2);
+		String phoneNumber = addressParts.length > 0 ? addressParts[0].trim() : "";
+		String address = addressParts.length > 1 ? addressParts[1].trim() : "";
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -416,19 +418,15 @@ public class OrderService {
 							.setFont(font).setFontSize(10)));
 			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
 					.add(new Paragraph("Khách hàng: " + order.getUser().getFullName()).setFont(boldFont).setFontSize(10)));
-			if (order.getOrderDate() instanceof LocalDateTime) {
-				infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
-						.add(new Paragraph("Ngày đặt hàng: " + ((LocalDateTime) order.getOrderDate()).format(dateTimeFormatter))
-								.setFont(font).setFontSize(10)));
-			} else {
-				infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
-						.add(new Paragraph("Ngày đặt hàng: " + order.getOrderDate().toString())
-								.setFont(font).setFontSize(10)));
-			}
 			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
-					.add(new Paragraph("Địa chỉ: " + order.getAddress()).setFont(font).setFontSize(10)));
+					.add(new Paragraph("Ngày đặt hàng: " + ((LocalDateTime) order.getOrderDate()).format(dateTimeFormatter))
+							.setFont(font).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Số điện thoại: " + phoneNumber).setFont(font).setFontSize(10)));
 			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
 					.add(new Paragraph("Phương thức thanh toán: " + order.getPaymentMethod()).setFont(font).setFontSize(10)));
+			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
+					.add(new Paragraph("Địa chỉ: " + address).setFont(font).setFontSize(10)));
 			infoTable.addCell(new Cell().setBorder(Border.NO_BORDER)
 					.add(new Paragraph("Trạng thái thanh toán: " + (order.getPaymentStatus() == 1 ? "Đã thanh toán" : "Chưa thanh toán"))
 							.setFont(font).setFontSize(10)));
@@ -514,7 +512,7 @@ public class OrderService {
 			document.add(new Paragraph("").setMarginBottom(20));
 
 			Paragraph footer = new Paragraph("Cảm ơn quý khách đã mua sắm tại L'Hex Shop!\n" +
-					"Vui lòng liên hệ hỗ trợ qua email customers@lhex.vn hoặc hotline  0378 447 716.")
+					"Vui lòng liên hệ hỗ trợ qua email Bytecrew@lhex.vn hoặc hotline  0378 447 716.")
 					.setFont(font)
 					.setFontSize(10)
 					.setTextAlignment(TextAlignment.CENTER)
