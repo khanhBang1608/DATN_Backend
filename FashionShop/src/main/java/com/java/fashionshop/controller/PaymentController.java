@@ -168,9 +168,10 @@ public class PaymentController {
                     <td style="padding: 8px; text-align: right; font-size: 12px; font-weight: bold;">%s</td>
                 </tr>
             """, df.format(order.getTotalAmount())));
-                String[] addressParts = order.getAddress().split(" - ", 2);
-                String phoneNumber = addressParts.length > 0 ? addressParts[0].trim() : "";
-                String address = addressParts.length > 1 ? addressParts[1].trim() : "";
+                String[] addressParts = order.getAddress().split(" - ", 3);
+                String fullName = addressParts.length > 0 ? addressParts[0].trim() : "";
+                String phoneNumber = addressParts.length > 1 ? addressParts[1].trim() : "";
+                String address = addressParts.length > 2 ? addressParts[2].trim() : "";
                 String subject = "Hóa đơn thanh toán thành công - Đơn #" + order.getOrderId();
                 String content = String.format("""
 <html>
@@ -186,16 +187,20 @@ public class PaymentController {
             <td style="width: 50%%; text-align: right;"><strong>Ngày xuất:</strong> %s</td>
         </tr>
         <tr>
-            <td><strong>Khách hàng:</strong> %s</td>
+            <td><strong>Người đặt:</strong> %s</td>
             <td style="text-align: right;"><strong>Ngày đặt hàng:</strong> %s</td>
         </tr>
         <tr>
-            <td><strong>Số điện thoại:</strong> %s</td>
+            <td><strong>Người nhận:</strong> %s</td>
             <td style="text-align: right;"><strong>Phương thức thanh toán:</strong> %s</td>
         </tr>
         <tr>
-            <td><strong>Địa chỉ:</strong> %s</td>
+            <td><strong>Số điện thoại người nhận:</strong> %s</td>
             <td style="text-align: right;"><strong>Trạng thái thanh toán:</strong> %s</td>
+        </tr>
+        <tr>
+            <td><strong>Địa chỉ người nhận:</strong> %s</td>
+            <td></td>
         </tr>
     </table>
     <h3 style="font-size: 14px; font-weight: bold;">Chi tiết đơn hàng</h3>
@@ -223,7 +228,7 @@ public class PaymentController {
     <div style="clear: both;"></div>
     <p style="font-size: 10px; text-align: center; color: #333; margin-top: 20px;">
         Cảm ơn quý khách đã mua sắm tại L'Hex Shop!<br>
-        Vui lòng liên hệ hỗ trợ qua email customers@lhex.vn hoặc hotline 0378 447 716.
+        Vui lòng liên hệ hỗ trợ qua email Bytecrew@lhex.vn hoặc hotline 0378 447 716.
     </p>
 </body>
 </html>
@@ -231,10 +236,11 @@ public class PaymentController {
                         LocalDate.now().format(dateFormatter),
                         order.getUser().getFullName(),
                         order.getOrderDate().format(dateFormatter),
-                        phoneNumber,
+                        fullName, // Added recipient's name
                         order.getPaymentMethod(),
-                        address,
+                        phoneNumber,
                         order.getPaymentStatus() == 1 ? "Đã thanh toán" : "Chưa thanh toán",
+                        address,
                         tableRows.toString(),
                         summaryRows.toString());
 
