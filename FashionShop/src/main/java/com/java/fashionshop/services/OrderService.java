@@ -160,6 +160,8 @@ public class OrderService {
 		}
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
 		order = orderRepository.save(order);
+		
+			adjustStockForOrder(order, false);
 
         return convertToDTO(order);
     }
@@ -275,10 +277,10 @@ public class OrderService {
 			order.setPaymentStatus(2);
 		}
 
-		if (orderDTO.getStatus() == 2 && previousStatus != 2) {
-			// Chuyển sang đang giao hàng => trừ stock
-			adjustStockForOrder(order, false);
-		}
+//		if (orderDTO.getStatus() == 2 && previousStatus != 2) {
+//			// Chuyển sang đang giao hàng => trừ stock
+//			adjustStockForOrder(order, false);
+//		}
 
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
 		order = orderRepository.save(order);
