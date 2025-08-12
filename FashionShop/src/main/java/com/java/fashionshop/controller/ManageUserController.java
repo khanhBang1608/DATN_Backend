@@ -1,5 +1,7 @@
 package com.java.fashionshop.controller;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,13 +28,28 @@ public class ManageUserController {
     @Autowired
     private AddressService addressService;
 
-    // ✅ API lấy danh sách tất cả người dùng (trừ role = 0 nếu đúng như bạn filter)
     @GetMapping
     public ResponseEntity<?> getAllUsersPaged(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String fromDate,  // Format: yyyy-MM-dd
+            @RequestParam(required = false) String toDate,    // Format: yyyy-MM-dd
+            @RequestParam(required = false) Boolean status    // Giữ nguyên tham số status
     ) {
-        Page<UserEntity> userPage = userService.findUsersPaged(page, size);
+        LocalDateTime from = null;
+        LocalDateTime to = null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        if (fromDate != null) {
+            from = LocalDateTime.parse(fromDate + "T00:00:00");  // Bắt đầu ngày
+        }
+        if (toDate != null) {
+            to = LocalDateTime.parse(toDate + "T23:59:59");  // Kết thúc ngày
+        }
+
+        Page<UserEntity> userPage = userService.findUsersPaged(page, size, name, email, from, to, status);
 
         List<UserDTO> users = userPage.getContent().stream().map(user -> new UserDTO(
                 user.getUserId(),
