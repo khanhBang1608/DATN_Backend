@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.java.fashionshop.bean.CategoryBean;
 import com.java.fashionshop.dto.CategoryDTO;
 import com.java.fashionshop.entity.CategoryEntity;
@@ -30,10 +30,14 @@ public class ManageCategoryController {
     @Autowired
     private JpaCategory categoryJPA;
 
-    // Lấy tất cả danh mục
+    @Transactional(readOnly = true) // Thêm để tránh LazyInitializationException khi truy cập products
     @GetMapping
     public List<CategoryDTO> getAllCategories() {
         List<CategoryEntity> categories = categoryJPA.findAll();
+
+        // Tạo map từ ID đến Entity để dễ truy cập products
+        Map<Integer, CategoryEntity> entityMap = categories.stream()
+                .collect(Collectors.toMap(CategoryEntity::getCategoryId, entity -> entity));
 
         // Chuyển về DTO map để xử lý phân cấp
         Map<Integer, CategoryDTO> dtoMap = new HashMap<>();
@@ -62,9 +66,29 @@ public class ManageCategoryController {
             }
         }
 
+        // Tính toán productCount đệ quy cho từng root
+        for (CategoryDTO root : roots) {
+            calculateProductCount(root, entityMap);
+        }
+
         return roots;
     }
 
+    // Method helper để tính productCount đệ quy
+    private void calculateProductCount(CategoryDTO dto, Map<Integer, CategoryEntity> entityMap) {
+        // Lấy số sản phẩm trực tiếp của danh mục này
+        CategoryEntity entity = entityMap.get(dto.getCategoryId());
+        int count = (entity != null && entity.getProducts() != null) ? entity.getProducts().size() : 0;
+
+        // Nếu có con, tính đệ quy và cộng tổng từ con
+        for (CategoryDTO child : dto.getChildren()) {
+            calculateProductCount(child, entityMap);
+            count += child.getProductCount();
+        }
+
+        // Gán giá trị vào DTO
+        dto.setProductCount(count);
+    }
     // Lấy chi tiết danh mục theo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategoryById(@PathVariable Integer id) {
