@@ -169,6 +169,7 @@ public class ReviewService {
         dto.setUserFullName(review.getUser().getFullName());
         dto.setOrderDetailId(review.getOrderDetail().getOrderDetailId());
         dto.setProductName(review.getOrderDetail().getProductVariant().getProduct().getName());
+        dto.setProductId(review.getOrderDetail().getProductVariant().getProduct().getProductId());
 
         if (review.getMedia() != null) {
             dto.setMedia(review.getMedia().stream().map(media -> {

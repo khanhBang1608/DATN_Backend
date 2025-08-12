@@ -15,5 +15,6 @@ public class ReviewDTO {
     private String userFullName;
     private Integer orderDetailId;
     private String productName;
+    private Integer productId;
     private List<ReviewMediaDTO> media;
 }
