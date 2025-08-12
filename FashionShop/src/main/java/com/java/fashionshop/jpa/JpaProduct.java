@@ -21,10 +21,14 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 	Long getTotalStockByProductId(@Param("productId") Integer productId);
 
 	@Query(
-		    value = "SELECT * FROM product WHERE LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
+		    value = "SELECT p.* FROM product p " +
+		            "JOIN category c ON p.category_id = c.category_id " +
+		            "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+		            "   OR LOWER(c.category_name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
 		    nativeQuery = true
 		)
-		List<ProductEntity> searchByName(@Param("keyword") String keyword);
+		List<ProductEntity> searchByNameOrCategory(@Param("keyword") String keyword);
+
 	Page<ProductEntity> findAllByStatusTrueOrderByDateCreatedDesc(Pageable pageable);
 	Page<ProductEntity> findAll(Pageable pageable);
 
