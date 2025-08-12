@@ -88,9 +88,9 @@ public class UserService {
                     .collect(Collectors.toList());
     }
     
-    public Page<UserEntity> findUsersPaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return userJPA.findByRoleNot(0, pageable); // Loại bỏ role = 0
+    public Page<UserEntity> findUsersPaged(int page, int size, String name, String email, LocalDateTime fromDate, LocalDateTime toDate, Boolean status) {
+        Pageable pageable = PageRequest.of(page, size);  // Không sắp xếp theo status nữa, sử dụng mặc định
+        return userJPA.findUsersPagedWithFilters(name, email, fromDate, toDate, status, pageable);
     }
 
     public UserEntity updateUserStatus(Integer userId, boolean status) {
@@ -102,4 +102,6 @@ public class UserService {
         }
         return null;
     }
+    
+    
 }
