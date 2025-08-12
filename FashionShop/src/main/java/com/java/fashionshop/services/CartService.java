@@ -74,6 +74,8 @@ public class CartService {
                 .map(detail -> new CartDetailDTO(
                         detail.getCartDetailId(),
                         detail.getProductVariant().getProductVariantId(),
+                        detail.getProductVariant().getProduct().getStatus(),
+                        detail.getProductVariant().getProduct().getCategory().isStatus(), 
                         detail.getQuantity(),
                         detail.getProductVariant().getPrice(),
                         detail.getProductVariant().getProduct().getName(),
