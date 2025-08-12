@@ -177,10 +177,17 @@ public class ProductClientController {
     }
     
     @GetMapping("/products/search")
-    public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String keyword) {
-        List<ProductDTO> results = productService.searchProductsByName(keyword);
+    public ResponseEntity<Page<ProductDTO>> searchProductsPaged(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductDTO> results = productService.searchProductsByNamePaged(keyword, pageable);
+
         return ResponseEntity.ok(results);
     }
+
 
     @GetMapping("/products/{productId}/average-rating")
     public ResponseEntity<Double> getAverageRating(@PathVariable Integer productId) {

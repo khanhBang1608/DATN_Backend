@@ -194,13 +194,15 @@ public ProductDTO convertToDTO(ProductEntity product) {
 		return jpaProduct.findByCategory_CategoryId(categoryId);
 	}
 
-	// Tìm kiếm sản phẩm theo tên sản phẩm hoặc tên danh mục
-	public List<ProductDTO> searchProductsByName(String keyword) {
-	    List<ProductEntity> entities = jpaProduct.searchByNameOrCategory(keyword);
-	    return entities.stream()
-	            .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
-	            .map(this::convertToDTO)
-	            .collect(Collectors.toList());
+	public Page<ProductDTO> searchProductsByNamePaged(String keyword, Pageable pageable) {
+	    Page<ProductEntity> entities = jpaProduct.searchByNameOrCategoryPaged(keyword, pageable);
+
+	    List<ProductDTO> filtered = entities.stream()
+	        .filter(p -> p.getVariants() != null && !p.getVariants().isEmpty())
+	        .map(this::convertToDTO)
+	        .toList();
+
+	    return new PageImpl<>(filtered, pageable, entities.getTotalElements());
 	}
 
 	public Page<ProductDTO> getRelatedProducts(Integer categoryId, Integer excludeProductId, Pageable pageable) {

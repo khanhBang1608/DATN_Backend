@@ -25,9 +25,13 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 		            "JOIN category c ON p.category_id = c.category_id " +
 		            "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
 		            "   OR LOWER(c.category_name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
+		    countQuery = "SELECT COUNT(*) FROM product p " +
+		            "JOIN category c ON p.category_id = c.category_id " +
+		            "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+		            "   OR LOWER(c.category_name) LIKE LOWER(CONCAT('%', :keyword, '%'))",
 		    nativeQuery = true
 		)
-		List<ProductEntity> searchByNameOrCategory(@Param("keyword") String keyword);
+		Page<ProductEntity> searchByNameOrCategoryPaged(@Param("keyword") String keyword, Pageable pageable);
 
 	Page<ProductEntity> findAllByStatusTrueOrderByDateCreatedDesc(Pageable pageable);
 	Page<ProductEntity> findAll(Pageable pageable);
