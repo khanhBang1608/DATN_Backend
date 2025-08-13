@@ -58,9 +58,10 @@ public class ManageUserController {
                 user.getAvatar(),
                 user.getStatus() != null ? user.getStatus() : false,
                 user.getRole(),
+                userService.countOrdersByUserId(user.getUserId()), 
                 user.getDateCreated()
         )).collect(Collectors.toList());
-
+        
         return ResponseEntity.ok(
             new java.util.HashMap<String, Object>() {{
                 put("users", users);

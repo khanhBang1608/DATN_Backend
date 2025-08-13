@@ -1,6 +1,7 @@
 package com.java.fashionshop.services;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,23 @@ public class AddressService {
             throw new RuntimeException("Không có quyền cập nhật địa chỉ này");
         }
 
+        // So sánh dữ liệu cũ và mới
+        boolean isChanged =
+                !Objects.equals(entity.getCustomerName(), bean.getCustomerName()) ||
+                !Objects.equals(entity.getPhone(), bean.getPhone()) ||
+                !Objects.equals(entity.getAddress(), bean.getAddress()) ||
+                !Objects.equals(entity.getProvinceId(), bean.getProvinceId()) ||
+                !Objects.equals(entity.getProvinceName(), bean.getProvinceName()) ||
+                !Objects.equals(entity.getDistrictId(), bean.getDistrictId()) ||
+                !Objects.equals(entity.getDistrictName(), bean.getDistrictName()) ||
+                !Objects.equals(entity.getWardId(), bean.getWardId()) ||
+                !Objects.equals(entity.getWardName(), bean.getWardName());
+
+        if (!isChanged) {
+            throw new RuntimeException("NO_CHANGE"); // báo hiệu front-end biết
+        }
+
+        // Cập nhật nếu có thay đổi
         entity.setCustomerName(bean.getCustomerName());
         entity.setPhone(bean.getPhone());
         entity.setAddress(bean.getAddress());
@@ -71,6 +89,7 @@ public class AddressService {
         AddressEntity saved = jpaAddress.save(entity);
         return convertToDTO(saved);
     }
+
 
 
     public void deleteAddress(Integer addressId, UserEntity user) {

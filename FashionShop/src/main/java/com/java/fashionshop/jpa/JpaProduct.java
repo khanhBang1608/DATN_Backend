@@ -35,6 +35,8 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 
 	Page<ProductEntity> findAllByStatusTrueOrderByDateCreatedDesc(Pageable pageable);
 	Page<ProductEntity> findAll(Pageable pageable);
-
-
+	@Query("SELECT p.name FROM ProductEntity p " +
+		       "JOIN p.variants v " +
+		       "WHERE v.productVariantId = :variantId")
+		String findProductNameByVariantId(@Param("variantId") Integer variantId);
 }

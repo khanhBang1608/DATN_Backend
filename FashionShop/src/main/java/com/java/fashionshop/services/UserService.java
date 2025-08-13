@@ -103,5 +103,7 @@ public class UserService {
         return null;
     }
     
-    
+    public Integer countOrdersByUserId(Integer userId) {
+        return userJPA.countOrdersByUserId(userId);
+    }
 }

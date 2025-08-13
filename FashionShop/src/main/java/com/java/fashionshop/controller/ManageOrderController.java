@@ -3,7 +3,6 @@ package com.java.fashionshop.controller;
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderReturnDTO;
 import com.java.fashionshop.services.OrderService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +32,16 @@ public class ManageOrderController {
         return ResponseEntity.ok(orderService.getAllOrders(pageable));
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Page<OrderDTO>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        return ResponseEntity.ok(orderService.getOrdersByUserId(userId, pageable));
+    }
+    
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Integer orderId) {
         return ResponseEntity.ok(orderService.getOrderById(orderId));
@@ -83,5 +92,4 @@ public class ManageOrderController {
     public ResponseEntity<OrderReturnDTO> getReturnRequest(@PathVariable Integer orderId) {
         return ResponseEntity.ok(orderService.getReturnRequestByOrderId(orderId));
     }
-
 }

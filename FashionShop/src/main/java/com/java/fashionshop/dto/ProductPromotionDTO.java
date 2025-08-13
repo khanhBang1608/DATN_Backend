@@ -18,4 +18,6 @@ public class ProductPromotionDTO {
 	private ProductVariantDTO productVariant;
 	
 	private Double discountedPrice;
+	
+	private String productName;
 }

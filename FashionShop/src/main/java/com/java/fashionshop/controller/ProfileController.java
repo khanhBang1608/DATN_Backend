@@ -46,7 +46,7 @@ public class ProfileController {
 
 		UserEntity user = optUser.get();
 		return ResponseEntity.ok(new UserDTO(user.getUserId(), user.getFullName(), user.getEmail(), user.getAvatar(),
-				user.getStatus(), user.getRole(), user.getDateCreated()));
+				user.getStatus(), user.getRole(),null, user.getDateCreated()));
 	}
 
 	@PutMapping("/update")
@@ -110,6 +110,7 @@ public class ProfileController {
 	                user.getAvatar(),
 	                user.getStatus(),
 	                user.getRole(),
+	                null,
 	                user.getDateCreated()
 	        ));
 	    } catch (Exception e) {

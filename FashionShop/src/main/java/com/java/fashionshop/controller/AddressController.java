@@ -71,9 +71,17 @@ public class AddressController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized or user not found");
         }
 
-        AddressDTO updated = addressService.updateAddress(addressId, addressBean, user);
-        return ResponseEntity.ok(updated);
+        try {
+            AddressDTO updated = addressService.updateAddress(addressId, addressBean, user);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            if ("NO_CHANGE".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body("Không có sự thay đổi nào");
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
     // ✅ Xóa địa chỉ
     @DeleteMapping("/delete/{addressId}")

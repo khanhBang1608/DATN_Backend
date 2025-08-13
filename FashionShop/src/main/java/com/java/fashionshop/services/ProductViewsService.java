@@ -131,7 +131,7 @@ public class ProductViewsService {
 		// Chuyển đổi UserEntity -> UserDTO
 		UserEntity user = productView.getUser();
 		if (user != null) {
-			UserDTO userDTO = new UserDTO(null, null, null, null, false, null, null);
+			UserDTO userDTO = new UserDTO(null, null, null, null, false, null, null,null);
 			userDTO.setId(user.getUserId());
 			userDTO.setName(user.getFullName());
 			userDTO.setEmail(user.getEmail());

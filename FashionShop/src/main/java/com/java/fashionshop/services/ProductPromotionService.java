@@ -19,6 +19,7 @@ import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.entity.ProductPromotionEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
 import com.java.fashionshop.entity.PromotionsEntity;
+import com.java.fashionshop.jpa.JpaProduct;
 import com.java.fashionshop.jpa.JpaProductPromotion;
 import com.java.fashionshop.jpa.JpaPromotions;
 import com.java.fashionshop.jpa.JpaProductVariant;
@@ -34,6 +35,9 @@ public class ProductPromotionService {
 
 	@Autowired
 	private JpaProductVariant JpaProductVariant;
+	
+	@Autowired
+	private JpaProduct jpaProduct;
 
 	public List<ProductVariantDTO> getVariantsByProductId(Integer productId) {
 		List<ProductVariantEntity> variants = JpaProductVariant.findByProduct_ProductId(productId);
@@ -165,7 +169,7 @@ public class ProductPromotionService {
 		}
 
 		dto.setProductVariant(variantDTO); // Gán đầy đủ vào DTO cha
-
+		dto.setProductName(jpaProduct.findProductNameByVariantId(variant.getProductVariantId()));
 		Double originalPrice = variant.getPrice().doubleValue();
 		Double discountPercent = entity.getPromotion().getDiscountAmount();
 		Double discountedPrice = originalPrice * (1 - discountPercent / 100);
