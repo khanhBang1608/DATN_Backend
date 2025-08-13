@@ -16,6 +16,7 @@ public class UserDTO {
     private String avatar;
     private boolean status;
     private Integer role;
+    private Integer countOrder;
     
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime createdAt;

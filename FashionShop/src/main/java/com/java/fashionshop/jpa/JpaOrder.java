@@ -18,6 +18,7 @@ import org.springframework.data.repository.query.Param;
 public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 	List<OrderEntity> findByUser(UserEntity user);
 	List<OrderEntity> findByUser_UserIdOrderByOrderDateDesc(Integer userId);
+	Page<OrderEntity> findByUser_UserId(Integer userId, Pageable pageable);
 	
 	@Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OrderEntity o WHERE o.paymentStatus = 1")
 	BigDecimal getTotalRevenueWithPaymentStatus1();

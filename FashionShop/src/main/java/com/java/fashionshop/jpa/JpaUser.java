@@ -44,4 +44,12 @@ public interface JpaUser extends JpaRepository<UserEntity, Integer> {
         ORDER BY MIN(date_created) ASC
         """, nativeQuery = true)
     List<Map<String, Object>> countUsersByMonthYear();
+    
+    @Query("""
+    	    SELECT COUNT(o)
+    	    FROM OrderEntity o
+    	    WHERE o.user.userId = :userId
+    	""")
+    	Integer countOrdersByUserId(@Param("userId") Integer userId);
+
 }

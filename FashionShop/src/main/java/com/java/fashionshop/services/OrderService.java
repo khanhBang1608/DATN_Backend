@@ -676,6 +676,8 @@ public class OrderService {
 		return orderRepository.findByTxnRef(txnRef)
 				.orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với mã giao dịch: " + txnRef));
 	}
-
-
+	public Page<OrderDTO> getOrdersByUserId(Integer userId, Pageable pageable) {
+	    return orderRepository.findByUser_UserId(userId, pageable)
+	            .map(this::convertToDTO);
 	}
+}
