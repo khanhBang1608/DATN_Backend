@@ -55,11 +55,6 @@ public class PublicCategoryController {
                 }
             }
         }
-
-        // Tùy chọn: Tính productCount nếu cần (reuse từ admin, nhưng loại bỏ lazy load products vì public không cần)
-        // Nếu cần, thêm Map<Integer, CategoryEntity> entityMap và calculateProductCount tương tự admin.
-        // Ở đây tôi bỏ để đơn giản, bạn có thể thêm nếu muốn hiển thị số sản phẩm.
-
         return roots;
     }
 }
