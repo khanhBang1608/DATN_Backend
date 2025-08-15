@@ -43,18 +43,22 @@ public class PublicCategoryController {
             dtoMap.put(dto.getCategoryId(), dto);
         }
 
-        // Gán danh mục con cho cha
-        List<CategoryDTO> roots = new ArrayList<>();
+        // Xây dựng cây danh mục và lọc các cha không có con
+        List<CategoryDTO> rootCategories = new ArrayList<>();
         for (CategoryDTO dto : dtoMap.values()) {
-            if (dto.getParentId() == null) {
-                roots.add(dto); // là danh mục gốc
+            Integer parentId = dto.getParentId();
+            if (parentId == null) {
+                rootCategories.add(dto); // Thêm danh mục gốc
             } else {
-                CategoryDTO parent = dtoMap.get(dto.getParentId());
+                CategoryDTO parent = dtoMap.get(parentId);
                 if (parent != null) {
-                    parent.getChildren().add(dto);
+                    parent.getChildren().add(dto); // Thêm con vào cha
                 }
             }
         }
-        return roots;
-    }
-}
+
+        // Lọc các danh mục cha không có con
+        return rootCategories.stream()
+                .filter(root -> !root.getChildren().isEmpty()) // Chỉ giữ cha có con
+                .collect(Collectors.toList());
+    }}
