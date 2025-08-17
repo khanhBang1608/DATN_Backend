@@ -223,5 +223,4 @@ public ProductDTO convertToDTO(ProductEntity product) {
 	    return new PageImpl<>(paginatedList, pageable, filtered.size());
 	}
 
-
 }
