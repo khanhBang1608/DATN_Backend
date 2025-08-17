@@ -396,7 +396,7 @@ public class OrderService {
 					.setMarginBottom(10);
 			document.add(title);
 
-			document.add(new Paragraph("CÔNG TY CỔ PHẦN MAISON RETAIL MANAGEMENT INTERNATIONAL")
+			document.add(new Paragraph("CÔNG TY CỔ PHẦN L'HEX INTERNATIONAL FASHION TRADING")
 					.setFont(boldFont)
 					.setFontSize(12)
 					.setTextAlignment(TextAlignment.LEFT));
