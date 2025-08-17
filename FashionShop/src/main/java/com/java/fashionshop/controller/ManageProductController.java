@@ -31,6 +31,7 @@ import com.java.fashionshop.bean.ProductVariantBean;
 import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.dto.ProductStockDTO;
 import com.java.fashionshop.dto.ProductVariantDTO;
+import com.java.fashionshop.dto.SystemProductStatsDTO;
 import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
@@ -240,6 +241,17 @@ public class ManageProductController {
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống: " + e.getMessage());
 		}
+	}
+	
+	@GetMapping("/product/system-stats")
+	public ResponseEntity<SystemProductStatsDTO> getSystemStats() {
+	    try {
+	        SystemProductStatsDTO stats = productService.getSystemProductStats();
+	        return ResponseEntity.ok(stats);
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(null);
+	    }
 	}
 
 	public ProductDTO convertToDTO(ProductEntity product) {
