@@ -87,5 +87,15 @@ public class AttributeService {
     public boolean existsSizeName(String sizeName) {
         return jpaSizes.existsBySizeNameIgnoreCase(sizeName.trim());
     }
+    
+ // Color Methods
+    public List<ColorsEntity> getAllColorsList() {
+        return jpaColors.findAll();
+    }
+
+    // Size Methods
+    public List<SizesEntity> getAllSizesList() {
+        return jpaSizes.findAll();
+    }
 
 }

@@ -5,8 +5,12 @@ import com.java.fashionshop.dto.ProductDTO;
 import com.java.fashionshop.dto.ProductOptionsResponse;
 import com.java.fashionshop.dto.ProductVariantDTO;
 import com.java.fashionshop.dto.SizesDTO;
+import com.java.fashionshop.entity.ColorsEntity;
 import com.java.fashionshop.entity.ProductEntity;
 import com.java.fashionshop.entity.ProductVariantEntity;
+import com.java.fashionshop.entity.SizesEntity;
+import com.java.fashionshop.jpa.JpaProductVariant;
+import com.java.fashionshop.services.AttributeService;
 import com.java.fashionshop.services.FavoriteService;
 import com.java.fashionshop.services.OrderService;
 import com.java.fashionshop.services.ProductService;
@@ -43,6 +47,9 @@ public class ProductClientController {
     
     @Autowired
     private FavoriteService favoriteService;
+    
+    @Autowired
+    private AttributeService attributeService;
     
     @GetMapping("/products/top10")
     public ResponseEntity<?> getTopNewestProductsWithVariants(
@@ -213,6 +220,20 @@ public class ProductClientController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Không thể lấy lượt yêu thích"));
         }
+    }
+    
+ // Lấy toàn bộ màu
+    @GetMapping("/colors/all")
+    public ResponseEntity<List<ColorsEntity>> getAllColors() {
+        List<ColorsEntity> colors = attributeService.getAllColorsList(); // service trả về List
+        return ResponseEntity.ok(colors);
+    }
+
+    // Lấy toàn bộ size
+    @GetMapping("/sizes/all")
+    public ResponseEntity<List<SizesEntity>> getAllSizes() {
+        List<SizesEntity> sizes = attributeService.getAllSizesList(); // service trả về List
+        return ResponseEntity.ok(sizes);
     }
 
 }
