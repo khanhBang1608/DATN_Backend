@@ -229,6 +229,20 @@ public class CartService {
         cart.setDetails(new ArrayList<>());
         return cartRepository.save(cart);
     }
+    public Integer getCartItemCount() {
+        Integer userId = getAuthenticatedUserId();
+        logger.debug("Fetching cart item count for userId: {}", userId);
+        
+        CartEntity cart = cartRepository.findByUserUserId(userId)
+                .orElseGet(() -> {
+                    logger.info("No cart found for userId: {}, returning 0", userId);
+                    return new CartEntity();
+                });
+
+        int itemCount = cart.getDetails().size();
+        logger.debug("Cart item count for userId: {} is {}", userId, itemCount);
+        return itemCount;
+    }
 }
 
 

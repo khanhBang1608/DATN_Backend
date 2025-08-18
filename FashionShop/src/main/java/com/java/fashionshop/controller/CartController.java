@@ -49,4 +49,8 @@ class CartController {
     public ResponseEntity<CartDTO> clearCart() {
         return ResponseEntity.ok(cartService.clearCart());
     }
+    @GetMapping(value = "/item-count", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Integer> getCartItemCount() {
+        return ResponseEntity.ok(cartService.getCartItemCount());
+    }
 }
