@@ -45,9 +45,9 @@ public class ChatProductService {
                                     v.getSizeName() != null ? v.getSizeName() : "-",
                                     v.getPrice()))
                             .collect(Collectors.joining("; "));
-                    return String.format("- %s: %s, còn %d biến thể (%s)",
+                    return String.format("- %s: còn %d biến thể (%s)",
                             dto.getName(),
-                            dto.getDescription() != null ? dto.getDescription() : "không có mô tả",
+                            
                             dto.getVariants().size(),
                             variants);
                 })
