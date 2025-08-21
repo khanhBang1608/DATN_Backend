@@ -16,8 +16,8 @@ import java.util.Map;
 @RequestMapping("/api/user/shipping")
 public class ShippingFeeController {
 
-	private final String ghnToken = "b1128a4b-3c99-11f0-b2d1-fa768adb59a3";
-	private final Integer ghnShopId = 5807040;
+	private final String ghnToken = "6547191c-7ccd-11f0-873d-ee33b76c5ced";
+	private final Integer ghnShopId = 197297;
 	private final Integer fromDistrictId = 3317;
 
 	@Autowired
@@ -34,7 +34,7 @@ public class ShippingFeeController {
 		RestTemplate restTemplate = new RestTemplate();
 
 		// Step 1: Lấy service_id hợp lệ từ GHN
-		String serviceUrl = "https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services";
+		String serviceUrl = "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services";
 		HttpHeaders serviceHeaders = new HttpHeaders();
 		serviceHeaders.set("Token", ghnToken);
 		serviceHeaders.setContentType(MediaType.APPLICATION_JSON);

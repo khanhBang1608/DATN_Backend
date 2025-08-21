@@ -1,17 +1,21 @@
 package com.java.fashionshop.services;
 
+import com.java.fashionshop.config.GhnConfig;
 import com.java.fashionshop.entity.*;
-import com.java.fashionshop.jpa.JpaDiscount;
-import com.java.fashionshop.jpa.JpaOrder;
-import com.java.fashionshop.jpa.JpaProductVariant;
-import com.java.fashionshop.jpa.JpaUser;
+import com.java.fashionshop.jpa.*;
 import com.java.fashionshop.request.PaymentRequest;
+import com.java.fashionshop.respone.GhnOrderStatusResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.java.fashionshop.config.PaymentConfig;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -26,9 +30,6 @@ import java.util.*;
 public class PaymentService {
 
 	@Autowired
-	private JpaUser userRepository;
-
-	@Autowired
 	private JpaOrder orderRepository;
 
 	@Autowired
@@ -36,7 +37,6 @@ public class PaymentService {
 
 	@Autowired
 	private JpaProductVariant productRepository;
-
 
 
 	private void adjustStockForOrder(OrderEntity order, boolean isRestock) {
@@ -51,7 +51,6 @@ public class PaymentService {
 			productRepository.save(variant);
 		}
 	}
-
 	@Transactional
 	public Map<String, String> createPendingOrder(
 			UserEntity user,
@@ -61,12 +60,16 @@ public class PaymentService {
 			BigDecimal discountAmount,
 			BigDecimal shippingFee,
 			List<PaymentRequest.OrderDetailRequest> orderDetails,
-	String idempotencyKey) {
+			String idempotencyKey,
+			Integer addressId) {
 		if (address == null || address.trim().isEmpty()) {
 			throw new IllegalArgumentException("Địa chỉ không được để trống");
 		}
 		if (orderDetails == null || orderDetails.isEmpty()) {
 			throw new IllegalArgumentException("Chi tiết đơn hàng không được để trống");
+		}
+		if (addressId == null) {
+			throw new IllegalArgumentException("addressId là bắt buộc");
 		}
 
 		if (idempotencyKey != null) {
@@ -89,10 +92,11 @@ public class PaymentService {
 		order.setTxnRef(txnRef);
 		order.setTotalAmount(BigDecimal.valueOf(totalAmount));
 		order.setOrderDate(LocalDateTime.now());
-		order.setStatus(0); // 0: Pending
+		order.setStatus(0); // 0: Chờ xác nhận
 		order.setPaymentStatus(0); // 0: Chưa thanh toán
 		order.setPaymentMethod("VNPAY");
 		order.setAddress(address);
+		order.setAddressId(addressId); // Lưu addressId
 		order.setShippingFee(shippingFee != null ? shippingFee : BigDecimal.ZERO);
 		order.setDiscountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO);
 

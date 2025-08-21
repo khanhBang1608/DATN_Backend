@@ -1,9 +1,11 @@
 package com.java.fashionshop.controller;
 
 import com.java.fashionshop.config.PaymentConfig;
+import com.java.fashionshop.entity.AddressEntity;
 import com.java.fashionshop.entity.OrderDetailEntity;
 import com.java.fashionshop.entity.OrderEntity;
 import com.java.fashionshop.entity.UserEntity;
+import com.java.fashionshop.jpa.JpaAddress;
 import com.java.fashionshop.jpa.JpaOrderDetail;
 import com.java.fashionshop.jpa.JpaUser;
 import com.java.fashionshop.request.PaymentRequest;
@@ -54,6 +56,9 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
+    @Autowired
+    private JpaAddress jpaAddress;
+
     @PostMapping("/api/user/payment/create")
     @ResponseBody
     public ResponseEntity<?> createPayment(@RequestBody PaymentRequest request) {
@@ -66,6 +71,12 @@ public class PaymentController {
         if (request.getOrderDetails() == null || request.getOrderDetails().isEmpty()) {
             return ResponseEntity.badRequest().body("Chi tiết đơn hàng không được để trống");
         }
+        if (request.getAddressId() == null) {
+            return ResponseEntity.badRequest().body("addressId là bắt buộc");
+        }
+
+        AddressEntity address = jpaAddress.findById(request.getAddressId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ với ID: " + request.getAddressId()));
 
         Map<String, String> response = paymentService.createPendingOrder(
                 user,
@@ -75,7 +86,8 @@ public class PaymentController {
                 request.getDiscountAmount(),
                 request.getShippingFee(),
                 request.getOrderDetails(),
-                request.getIdempotencyKey()
+                request.getIdempotencyKey(),
+                address.getAddressId()
         );
         return ResponseEntity.ok(response);
     }
@@ -109,7 +121,6 @@ public class PaymentController {
             try {
                 OrderEntity order = orderService.findByTxnRef(txnRef);
                 order.setPaymentStatus(1);
-                order.setStatus(1);
                 orderService.save(order);
 
                 DecimalFormat df = new DecimalFormat("#,##0 VND");

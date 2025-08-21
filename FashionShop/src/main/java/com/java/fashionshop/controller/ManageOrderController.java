@@ -2,7 +2,11 @@ package com.java.fashionshop.controller;
 
 import com.java.fashionshop.dto.OrderDTO;
 import com.java.fashionshop.dto.OrderReturnDTO;
+import com.java.fashionshop.entity.OrderEntity;
+import com.java.fashionshop.jpa.JpaOrder;
+import com.java.fashionshop.services.GhnService;
 import com.java.fashionshop.services.OrderService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -92,4 +96,37 @@ public class ManageOrderController {
     public ResponseEntity<OrderReturnDTO> getReturnRequest(@PathVariable Integer orderId) {
         return ResponseEntity.ok(orderService.getReturnRequestByOrderId(orderId));
     }
+
+    @GetMapping("/{orderId}/ghn-status")
+    public ResponseEntity<String> getGhnOrderStatus(@PathVariable Integer orderId) {
+        String status = orderService.getGhnOrderStatus(orderId);
+        return ResponseEntity.ok(status);
+    }
+
+    @PostMapping("/{orderId}/sync-ghn-status")
+    public ResponseEntity<Void> syncGhnOrderStatus(@PathVariable Integer orderId) {
+        orderService.syncGhnOrderStatus(orderId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{orderId}/approve")
+    public ResponseEntity<OrderDTO> approveOrder(@PathVariable Integer orderId) {
+        OrderDTO orderDTO = orderService.approveOrder(orderId);
+        return ResponseEntity.ok(orderDTO);
+    }
+
+//    @GetMapping("/{orderId}/ghn-label")
+//    public ResponseEntity<byte[]> printGhnLabel(@PathVariable Integer orderId) {
+//        OrderEntity order = jpaOrder.findById(orderId)
+//                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
+//        byte[] pdfBytes = ghnService.generateLabel(order.getGhnOrderCode());
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_PDF);
+//        headers.setContentDisposition(
+//                ContentDisposition.inline()
+//                        .filename("ghn-label-" + orderId + ".pdf", StandardCharsets.UTF_8)
+//                        .build()
+//        );
+//        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+//    }
 }

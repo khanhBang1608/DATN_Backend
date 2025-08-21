@@ -19,14 +19,21 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.java.fashionshop.config.GhnConfig;
 import com.java.fashionshop.dto.*;
 import com.java.fashionshop.entity.*;
+import com.java.fashionshop.helper.OrderHelperClass;
 import com.java.fashionshop.jpa.*;
 import com.java.fashionshop.request.OrderCreateRequest;
+import com.java.fashionshop.respone.GhnOrderStatusResponse;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -35,15 +42,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,6 +73,15 @@ public class OrderService {
 	@Autowired
 	private JpaOrderReturnEntity jpaOrderReturnEntity;
 
+	@Autowired
+	private JpaAddress jpaAddress;
+
+	@Autowired
+	private GhnService ghnService;
+
+	@Autowired
+	private GhnConfig ghnConfig;
+
 	public OrderEntity save(OrderEntity order) {
 		return orderRepository.save(order);
 	}
@@ -88,22 +103,24 @@ public class OrderService {
 	public OrderDTO createOrder(OrderCreateRequest request) {
 		Integer userId = getAuthenticatedUserId();
 		if (request.getIdempotencyKey() != null) {
-			OrderEntity existingOrder = orderRepository
-					.findByIdempotencyKey((request.getIdempotencyKey()));
+			OrderEntity existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey());
 			if (existingOrder != null) {
 				return convertToDTO(existingOrder);
 			}
 		}
 		UserEntity user = userRepository.findById(userId)
 				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user với id: " + userId));
-
+		if (request.getAddressId() == null) {
+			throw new IllegalArgumentException("addressId là bắt buộc");
+		}
 		OrderEntity order = new OrderEntity();
 		order.setUser(user);
 		order.setOrderDate(LocalDateTime.now());
 		order.setAddress(request.getAddress());
+		order.setAddressId(request.getAddressId()); // Lưu addressId
 		order.setIdempotencyKey(request.getIdempotencyKey());
 		order.setPaymentMethod(request.getPaymentMethod());
-		order.setStatus(0); // 0: Pending
+		order.setStatus(0); // 0: Chờ xác nhận
 		if ("VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
 			order.setPaymentStatus(1); // 1: Paid
 		} else {
@@ -119,10 +136,7 @@ public class OrderService {
 					discount.setQuantityLimit(discount.getQuantityLimit() - 1);
 					discountRepository.save(discount);
 					order.setDiscountCode(discount.getDiscountCode());
-
-					// ✅ Dùng discountAmount từ frontend
-					BigDecimal discountAmount = request.getDiscountAmount() != null ? request.getDiscountAmount()
-							: BigDecimal.ZERO;
+					BigDecimal discountAmount = request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO;
 					order.setDiscountAmount(discountAmount);
 				} else {
 					throw new RuntimeException("Mã giảm giá đã hết lượt sử dụng");
@@ -146,26 +160,23 @@ public class OrderService {
 
 			BigDecimal price = detailRequest.getPrice();
 			if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
-				price = variant.getPrice(); // fallback nếu thiếu
+				price = variant.getPrice();
 			}
 
-            OrderDetailEntity detail = new OrderDetailEntity();
-            detail.setOrder(order);
-            detail.setQuantity(detailRequest.getQuantity());
-            detail.setPrice(price); // ✅ dùng giá từ request nếu có
-            detail.setProductVariant(variant);
+			OrderDetailEntity detail = new OrderDetailEntity();
+			detail.setOrder(order);
+			detail.setQuantity(detailRequest.getQuantity());
+			detail.setPrice(price);
+			detail.setProductVariant(variant);
 
 			order.getOrderDetails().add(detail);
 			totalAmount = totalAmount.add(price.multiply(new BigDecimal(detail.getQuantity())));
 		}
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
+
 		order = orderRepository.save(order);
-		
-			adjustStockForOrder(order, false);
-
-        return convertToDTO(order);
-    }
-
+		return convertToDTO(order);
+	}
     public List<OrderDTO> getUserOrders() {
         Integer userId = getAuthenticatedUserId();
 
@@ -322,37 +333,50 @@ public class OrderService {
         return discountAmount;
     }
 
-    private OrderDTO convertToDTO(OrderEntity order) {
-        List<OrderDetailDTO> orderDetails = order.getOrderDetails().stream()
-                .map(detail -> new OrderDetailDTO(
-                        detail.getOrderDetailId(),
-                        detail.getQuantity(),
-                        detail.getPrice(),
-                        detail.getProductVariant().getProductVariantId(),
-                        detail.getProductVariant().getProduct().getName(),
-                        detail.getProductVariant().getImageName(),
-                        detail.getProductVariant().getSize().getSizeName(),
-                        detail.getProductVariant().getColor().getColorName()
-                ))
-                .collect(Collectors.toList());
+	private OrderDTO convertToDTO(OrderEntity order) {
+		List<OrderDetailDTO> orderDetails = order.getOrderDetails().stream()
+				.map(detail -> new OrderDetailDTO(
+						detail.getOrderDetailId(),
+						detail.getQuantity(),
+						detail.getPrice(),
+						detail.getProductVariant().getProductVariantId(),
+						detail.getProductVariant().getProduct().getName(),
+						detail.getProductVariant().getImageName(),
+						detail.getProductVariant().getSize().getSizeName(),
+						detail.getProductVariant().getColor().getColorName()
+				))
+				.collect(Collectors.toList());
 
-        return new OrderDTO(
-                order.getOrderId(),
-                order.getTotalAmount(),
-                order.getOrderDate(),
-                order.getAddress(),
-                order.getStatus(),
-                order.getShippingFee(),
-                order.getDiscountAmount(),
-                order.getPaymentMethod(),
-                order.getPaymentStatus(),
-                order.getUser().getUserId(),
-                order.getDiscountCode(),
-                orderDetails,
-                order.getUser().getFullName()
-        );
-    }
+		String ghnOrderStatus = order.getGhnOrderStatus();
+		String ghnOrderCode = order.getGhnOrderCode();
+		if (order.getGhnOrderCode() != null && ghnOrderStatus == null) {
+			try {
+				ghnOrderStatus = ghnService.getOrderStatus(order.getGhnOrderCode()).getData().getStatus();
+			} catch (Exception e) {
+				ghnOrderStatus = "Không thể lấy trạng thái GHN";
+			}
+		}
 
+		OrderDTO orderDTO = new OrderDTO(
+				order.getOrderId(),
+				order.getTotalAmount(),
+				order.getOrderDate(),
+				order.getAddress(),
+				order.getStatus(),
+				order.getShippingFee(),
+				order.getDiscountAmount(),
+				order.getPaymentMethod(),
+				order.getPaymentStatus(),
+				order.getUser().getUserId(),
+				order.getDiscountCode(),
+				orderDetails,
+				order.getUser().getFullName(),
+				ghnOrderStatus,
+				ghnOrderCode
+		);
+		orderDTO.setGhnOrderCode(order.getGhnOrderCode()); // Thêm dòng này
+		return orderDTO;
+	}
 	public Page<OrderDTO> getAllOrders(Pageable pageable) {
 		// Ghi đè sort theo status ASC
 		Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
@@ -679,5 +703,223 @@ public class OrderService {
 	public Page<OrderDTO> getOrdersByUserId(Integer userId, Pageable pageable) {
 	    return orderRepository.findByUser_UserId(userId, pageable)
 	            .map(this::convertToDTO);
+	}
+
+
+	// GHN order
+	@Transactional
+	public OrderDTO approveOrder(Integer orderId) {
+		OrderEntity order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+		if (order.getStatus() != 0) {
+			throw new IllegalStateException("Chỉ có thể duyệt đơn hàng ở trạng thái Chờ xác nhận");
+		}
+
+		// Tạo request cho createGhnOrder
+		OrderCreateRequest request = new OrderCreateRequest();
+		request.setAddress(order.getAddress());
+		request.setAddressId(order.getAddressId()); // Sử dụng addressId từ OrderEntity
+		request.setPaymentMethod(order.getPaymentMethod());
+		request.setShippingFee(order.getShippingFee());
+		request.setDiscountCode(order.getDiscountCode());
+		request.setDiscountAmount(order.getDiscountAmount());
+		List<OrderCreateRequest.OrderDetailRequest> orderDetails = order.getOrderDetails().stream()
+				.map(detail -> new OrderCreateRequest.OrderDetailRequest(
+						detail.getProductVariant().getProductVariantId(),
+						detail.getQuantity(),
+						detail.getPrice()
+				))
+				.collect(Collectors.toList());
+		request.setOrderDetails(orderDetails);
+
+		// Tạo đơn hàng trên GHN
+		String ghnOrderCode = createGhnOrder(order, request);
+		order.setGhnOrderCode(ghnOrderCode);
+		order.setStatus(1); // Chuyển sang Chờ lấy hàng
+		order = orderRepository.save(order);
+
+		// Đồng bộ trạng thái sau khi duyệt
+		syncGhnOrderStatus(order.getOrderId());
+
+		return convertToDTO(order);
+	}
+
+	private String createGhnOrder(OrderEntity order, OrderCreateRequest request) {
+		RestTemplate restTemplate = new RestTemplate();
+		String url = ghnConfig.getUrl() + "/shipping-order/create";
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Token", ghnConfig.getToken());
+		headers.set("Content-Type", "application/json");
+
+		if (request.getAddressId() == null) {
+			throw new IllegalArgumentException("addressId là bắt buộc trong createGhnOrder");
+		}
+		AddressEntity address = jpaAddress.findById(request.getAddressId())
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ với ID: " + request.getAddressId()));
+		Integer toDistrictId = address.getDistrictId();
+		String wardCode = String.valueOf(address.getWardId());
+
+		// Lấy service_id từ API GHN
+		String serviceUrl = ghnConfig.getUrl() + "/shipping-order/available-services";
+		Map<String, Object> serviceBody = new HashMap<>();
+		serviceBody.put("shop_id", Integer.valueOf(ghnConfig.getShopId()));
+		serviceBody.put("from_district", Integer.valueOf(ghnConfig.getFromDistrictId()));
+		serviceBody.put("to_district", toDistrictId);
+
+		HttpEntity<Map<String, Object>> serviceRequest = new HttpEntity<>(serviceBody, headers);
+		ResponseEntity<Map> serviceResponse = restTemplate.exchange(serviceUrl, HttpMethod.POST, serviceRequest, Map.class);
+
+		Map<String, Object> serviceResponseBody = serviceResponse.getBody();
+		if (serviceResponseBody == null || !serviceResponseBody.containsKey("data")) {
+			throw new RuntimeException("Không tìm thấy dịch vụ giao hàng phù hợp.");
+		}
+
+		List<Map<String, Object>> data = (List<Map<String, Object>>) serviceResponseBody.get("data");
+		if (data.isEmpty()) {
+			throw new RuntimeException("Danh sách dịch vụ rỗng.");
+		}
+
+		Integer serviceId = (Integer) data.get(0).get("service_id");
+		if (serviceId == null) {
+			throw new RuntimeException("Không lấy được service_id.");
+		}
+
+		// Tạo request body cho API tạo đơn hàng GHN
+		Map<String, Object> ghnRequest = new HashMap<>();
+		ghnRequest.put("shop_id", Integer.valueOf(ghnConfig.getShopId()));
+		ghnRequest.put("from_district_id", Integer.valueOf(ghnConfig.getFromDistrictId()));
+		ghnRequest.put("to_district_id", toDistrictId);
+		ghnRequest.put("to_ward_code", wardCode);
+		ghnRequest.put("payment_type_id", 2); // 2: Người nhận trả phí
+		ghnRequest.put("note", "Đơn hàng từ hệ thống");
+		ghnRequest.put("required_note", "KHONGCHOXEMHANG");
+
+		// Thông tin người nhận từ order.address
+		String[] addressParts = order.getAddress().split(" - ", 3);
+		ghnRequest.put("to_name", addressParts.length > 0 ? addressParts[0].trim() : "");
+		ghnRequest.put("to_phone", addressParts.length > 1 ? addressParts[1].trim() : "");
+		ghnRequest.put("to_address", addressParts.length > 2 ? addressParts[2].trim() : "");
+
+		// Chi tiết sản phẩm
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (OrderDetailEntity detail : order.getOrderDetails()) {
+			Map<String, Object> item = new HashMap<>();
+			item.put("name", detail.getProductVariant().getProduct().getName());
+			item.put("quantity", detail.getQuantity());
+			item.put("price", detail.getPrice().intValue());
+			item.put("weight", 100);
+			items.add(item);
+		}
+		ghnRequest.put("items", items);
+
+		// Các thông số khác
+		ghnRequest.put("weight", 1000);
+		ghnRequest.put("length", 30);
+		ghnRequest.put("width", 20);
+		ghnRequest.put("height", 10);
+		ghnRequest.put("service_id", serviceId);
+
+		HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(ghnRequest, headers);
+
+		try {
+			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, httpEntity, Map.class);
+			Map<String, Object> responseBody = response.getBody();
+			if (responseBody != null && responseBody.containsKey("data")) {
+				Map<String, Object> dataResponse = (Map<String, Object>) responseBody.get("data");
+				String ghnOrderCode = (String) dataResponse.get("order_code");
+				order.setGhnOrderCode(ghnOrderCode);
+				orderRepository.save(order);
+				return ghnOrderCode;
+			}
+			throw new RuntimeException("Không thể tạo đơn hàng GHN");
+		} catch (Exception e) {
+			throw new RuntimeException("Lỗi khi gọi API GHN tạo đơn hàng: " + e.getMessage());
+		}
+	}
+
+	public String getGhnOrderStatus(Integer orderId) {
+		OrderEntity order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+		if (order.getGhnOrderCode() == null) {
+			throw new IllegalStateException("Đơn hàng chưa được gửi qua GHN");
+		}
+
+		GhnOrderStatusResponse response = ghnService.getOrderStatus(order.getGhnOrderCode());
+		return response.getData().getStatus();
+	}
+
+	@Transactional
+	public void syncGhnOrderStatus(Integer orderId) {
+		OrderEntity order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy order với id: " + orderId));
+
+		if (order.getGhnOrderCode() == null) {
+			throw new IllegalStateException("Đơn hàng chưa được gửi qua GHN");
+		}
+
+		// Bỏ qua đồng bộ nếu đơn hàng ở trạng thái Chờ xác nhận
+		if (order.getStatus() == 0) {
+			System.out.println("Bỏ qua đồng bộ vì đơn hàng đang ở trạng thái Chờ xác nhận: " + order.getStatus());
+			return;
+		}
+
+		GhnOrderStatusResponse response = ghnService.getOrderStatus(order.getGhnOrderCode());
+		String ghnStatus = response.getData().getStatus();
+
+		System.out.println("GHN trả về status: " + ghnStatus);
+		System.out.println("Status hiện tại trong DB: " + order.getStatus());
+
+		// Kiểm tra trạng thái trả hàng
+		if (order.getStatus() == 4 || order.getStatus() == 6 || order.getStatus() == 7) {
+			if (order.getStatus() == 4 && "return".equals(ghnStatus)) {
+				order.setStatus(6); // Trả hàng thành công
+				order.setGhnOrderStatus(ghnStatus);
+				order.setPaymentStatus(2); // Hoàn tiền
+				adjustStockForOrder(order, true); // Trả lại hàng vào kho
+				orderRepository.save(order);
+				System.out.println("Cập nhật trạng thái trả hàng thành công: " + order.getStatus());
+			} else {
+				System.out.println("Bỏ qua đồng bộ vì đơn hàng đang ở trạng thái trả hàng: " + order.getStatus());
+			}
+			return;
+		}
+
+		Integer newStatus = mapGhnStatusToInternalStatus(ghnStatus);
+
+		if (!newStatus.equals(order.getStatus()) || !ghnStatus.equals(order.getGhnOrderStatus())) {
+			order.setStatus(newStatus);
+			order.setGhnOrderStatus(ghnStatus);
+			if (newStatus == 3) {
+				order.setPaymentStatus(1); // Đã thanh toán
+			} else if (newStatus == 5) {
+				order.setPaymentStatus(0); // Chưa thanh toán
+				adjustStockForOrder(order, true); // Hoàn lại hàng nếu cần
+			}
+			orderRepository.save(order);
+			System.out.println("Cập nhật thành công sang status mới: " + newStatus);
+		} else {
+			System.out.println("Không có thay đổi trạng thái, không cần update.");
+		}
+	}
+
+	private Integer mapGhnStatusToInternalStatus(String ghnStatus) {
+		switch (ghnStatus) {
+			case "ready_to_pick":
+			case "picking":
+				return 1; // Chuẩn bị hàng
+			case "delivering":
+				return 2; // Đang giao hàng
+			case "delivered":
+				return 3; // Đã giao
+			case "cancel":
+				return 5; // Đã hủy
+			case "return":
+				return 6; // Trả hàng thành công
+			default:
+				return 0; // Pending
+		}
 	}
 }

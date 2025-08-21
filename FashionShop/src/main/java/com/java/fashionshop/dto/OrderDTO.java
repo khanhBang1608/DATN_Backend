@@ -23,5 +23,7 @@ public class OrderDTO {
     private String discountCode;
     private List<OrderDetailDTO> orderDetails;
     private String userFullName; // Added
+    private String ghnOrderStatus;
+    private String ghnOrderCode;
 //    private String userPhoneNumber;
 }

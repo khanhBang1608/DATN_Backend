@@ -20,6 +20,7 @@ public class PaymentRequest {
     private BigDecimal shippingFee;
     private List<OrderDetailRequest> orderDetails;
     private String idempotencyKey;
+    private Integer addressId;
 
     @Data
     @NoArgsConstructor

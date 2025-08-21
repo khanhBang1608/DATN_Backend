@@ -11,7 +11,9 @@ import com.java.fashionshop.entity.SizesEntity;
 import com.java.fashionshop.jpa.JpaCategory;
 import com.java.fashionshop.jpa.JpaColors;
 import com.java.fashionshop.jpa.JpaSizes;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @SpringBootApplication
 public class FashionShopApplication {
 

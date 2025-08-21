@@ -8,4 +8,9 @@ import com.java.fashionshop.entity.AddressEntity;
 
 public interface JpaAddress extends JpaRepository<AddressEntity, Integer> {
 	List<AddressEntity> findByUserUserId(Integer userId);
+
+	List<AddressEntity> findByUser_UserId(Integer userUserId);
+
+
+	List<AddressEntity> findByAddressId(Integer addressId);
 }

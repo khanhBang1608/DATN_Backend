@@ -29,6 +29,8 @@ public class OrderEntity {
 	@Column(nullable = false, columnDefinition = "NVARCHAR(255)")
 	private String address;
 
+	private Integer addressId;
+
 	@Column(nullable = false)
 	private Integer status;
 
@@ -57,6 +59,12 @@ public class OrderEntity {
 
 	@Column(name = "idempotency_key" )
 	private String idempotencyKey;
+
+	@Column(name = "ghn_order_code", length = 50)
+	private String ghnOrderCode;
+
+	@Column(name = "ghn_order_status", length = 50)
+	private String ghnOrderStatus;
 
 	// Quan hệ với OrderDetail
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

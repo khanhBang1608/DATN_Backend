@@ -48,4 +48,8 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 
 
 	OrderEntity findByIdempotencyKey(String idempotencyKey);
+
+	List<OrderEntity> findByGhnOrderCodeIsNotNull();
+
+	Optional<OrderEntity> findByGhnOrderCode(String ghnOrderCode);
 }
