@@ -39,4 +39,6 @@ public interface JpaProduct extends JpaRepository<ProductEntity, Integer> {
 		       "JOIN p.variants v " +
 		       "WHERE v.productVariantId = :variantId")
 		String findProductNameByVariantId(@Param("variantId") Integer variantId);
+	List<ProductEntity> findTop8ByStatusTrueOrderByDateCreatedDesc();
+
 }

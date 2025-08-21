@@ -188,7 +188,15 @@ public class ProductService {
 	public Page<ProductEntity> findTopNewestProductsWithVariants(Pageable pageable) {
 		return jpaProduct.findAllByStatusTrueOrderByDateCreatedDesc(pageable);
 	}
-
+	public List<ProductDTO> findTop8NewestProductsWithVariants() {
+	    return jpaProduct.findTop8ByStatusTrueOrderByDateCreatedDesc()
+	            .stream()
+	            .map(this::convertToDTO)
+	            .filter(dto -> dto.getVariants() != null && !dto.getVariants().isEmpty())
+	            .filter(dto -> Boolean.TRUE.equals(dto.getStatus()) && Boolean.TRUE.equals(dto.getCategoryStatus()))
+	            .toList();
+	}
+	
 	// Tìm sản phẩm theo danh mục
 	public List<ProductEntity> findByCategoryId(Integer categoryId) {
 		return jpaProduct.findByCategory_CategoryId(categoryId);
