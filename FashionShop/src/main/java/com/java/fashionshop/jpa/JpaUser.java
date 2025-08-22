@@ -36,14 +36,14 @@ public interface JpaUser extends JpaRepository<UserEntity, Integer> {
     );
 
     @Query(value = """
-        SELECT 
-            FORMAT(date_created, 'MM/yyyy') AS monthYear,
-            COUNT(*) AS userCount
-        FROM [User]
-        GROUP BY FORMAT(date_created, 'MM/yyyy')
-        ORDER BY MIN(date_created) ASC
-        """, nativeQuery = true)
-    List<Map<String, Object>> countUsersByMonthYear();
+    	    SELECT 
+    	        FORMAT(date_created, 'MM/yyyy') AS monthYear,
+    	        COUNT(*) AS userCount
+    	    FROM [User]
+    	    GROUP BY FORMAT(date_created, 'MM/yyyy')
+    	    ORDER BY MIN(date_created) ASC
+    	    """, nativeQuery = true)
+    	List<Map<String, Object>> countUsersByMonthYear();
     
     @Query("""
     	    SELECT COUNT(o)
