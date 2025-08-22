@@ -1,6 +1,7 @@
 package com.java.fashionshop.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.java.fashionshop.entity.OrderEntity;
@@ -23,9 +24,9 @@ public class DiscountDTO {
 
 	private Integer quantityLimit;
 
-	private LocalDate startDate;
+	private LocalDateTime startDate;
 
-	private LocalDate endDate;
+	private LocalDateTime endDate;
 
 	private Boolean status;
 

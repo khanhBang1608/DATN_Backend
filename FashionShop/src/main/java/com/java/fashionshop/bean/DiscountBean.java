@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -36,11 +37,11 @@ public class DiscountBean {
     private Integer quantityLimit;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @NotNull(message = "Ngày kết thúc không được để trống")
     @Future(message = "Ngày kết thúc phải là một ngày trong tương lai")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     @NotNull(message = "Trạng thái không được để trống")
     private Boolean status;

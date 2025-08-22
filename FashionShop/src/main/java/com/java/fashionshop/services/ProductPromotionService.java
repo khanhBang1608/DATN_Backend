@@ -1,6 +1,7 @@
 package com.java.fashionshop.services;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -177,8 +178,8 @@ public class ProductPromotionService {
 		return dto;
 	}
 
-	private boolean isOverlappingPromotion(Integer variantId, Integer promotionId, LocalDate newStart,
-			LocalDate newEnd) {
+	private boolean isOverlappingPromotion(Integer variantId, Integer promotionId, LocalDateTime newStart,
+			LocalDateTime newEnd) {
 		List<ProductPromotionEntity> existing = productPromotionRepo.findByProductVariant_ProductVariantId(variantId);
 
 		for (ProductPromotionEntity item : existing) {

@@ -114,7 +114,7 @@ public class OrderService {
 
 		if (request.getDiscountCode() != null) {
 			DiscountEntity discount = discountRepository.findByDiscountCode(request.getDiscountCode()).orElse(null);
-			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
+			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDateTime.now())) {
 				if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
 					discount.setQuantityLimit(discount.getQuantityLimit() - 1);
 					discountRepository.save(discount);

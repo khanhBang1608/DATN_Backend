@@ -35,7 +35,7 @@ public class PromotionClientController {
      */
     @GetMapping("/active")
     public ResponseEntity<List<PromotionDTO>> getActivePromotions() {
-        LocalDate today = LocalDate.now(); // ✅ sửa từ LocalDateTime -> LocalDate
+        LocalDateTime today = LocalDateTime.now(); 
 
         List<PromotionDTO> list = promotionService.findAll().stream()
             .filter(p -> Boolean.TRUE.equals(p.getStatus()) &&
