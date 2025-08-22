@@ -6,6 +6,7 @@ import com.java.fashionshop.jpa.JpaOrder;
 import com.java.fashionshop.jpa.JpaProduct;
 import com.java.fashionshop.jpa.JpaReview;
 import com.java.fashionshop.jpa.JpaUser;
+import com.java.fashionshop.services.DashboardService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +30,7 @@ public class ManageDashboardController {
 	private final JpaProduct jpaProduct;
 	private final JpaOrder jpaOrder;
 	private final JpaReview jpaReview;
+	private final DashboardService dashboardService;
 
 	@GetMapping("/api/admin/dashboard/stats")
 	public DashboardStatsDTO getDashboardStats() {
@@ -43,14 +45,14 @@ public class ManageDashboardController {
 				totalRevenue);
 	}
 
-	@GetMapping("/api/admin/dashboard/stats/monthly-revenue")
-	public ResponseEntity<List<Map<String, Object>>> getMonthlyRevenue() {
-		return ResponseEntity.ok(orderRepository.getMonthlyRevenue());
-	}
+    @GetMapping("/api/admin/dashboard/stats/monthly-revenue")
+    public ResponseEntity<List<Map<String, Object>>> getMonthlyRevenue() {
+        // ✅ gọi service để trả đủ 12 tháng
+        return ResponseEntity.ok(dashboardService.getMonthlyRevenueFullYear());
+    }
 
-	@GetMapping("/api/admin/dashboard/stats/monthly-user-registrations")
-	public ResponseEntity<List<Map<String, Object>>> getMonthlyUserRegistrations() {
-		return ResponseEntity.ok(jpaUser.countUsersByMonthYear());
-	}
-
+    @GetMapping("/api/admin/dashboard/stats/monthly-user-registrations")
+    public ResponseEntity<List<Map<String, Object>>> getMonthlyUserRegistrations() {
+        return ResponseEntity.ok(dashboardService.getMonthlyUserRegistrationsFullYear());
+    }
 }
