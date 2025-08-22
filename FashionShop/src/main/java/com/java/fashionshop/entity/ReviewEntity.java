@@ -34,6 +34,9 @@ public class ReviewEntity {
     private String comment;
     private LocalDateTime reviewDate = LocalDateTime.now();
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isHidden = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;

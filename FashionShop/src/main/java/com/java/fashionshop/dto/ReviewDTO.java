@@ -17,4 +17,5 @@ public class ReviewDTO {
     private String productName;
     private Integer productId;
     private List<ReviewMediaDTO> media;
+    private Boolean isHidden;
 }

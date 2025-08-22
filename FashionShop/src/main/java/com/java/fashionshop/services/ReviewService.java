@@ -35,8 +35,22 @@ public class ReviewService {
     @Autowired
     private JpaOrderDetail orderDetailRepository;
 
-    public List<ReviewDTO> getAllReviews(List<Integer> ratings, LocalDateTime startDate, LocalDateTime endDate, String userFullName) {
-        List<ReviewEntity> reviews = reviewRepository.findReviewsWithFilters(ratings, startDate, endDate, userFullName);
+    @Transactional
+    public void hideReview(Integer reviewId, boolean hide) {
+        ReviewEntity review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+        review.setIsHidden(hide);
+        reviewRepository.save(review);
+    }
+
+    public List<ReviewDTO> getAllReviews(
+            List<Integer> ratings,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            String userFullName,
+            Boolean isHidden) {
+        List<ReviewEntity> reviews = reviewRepository.findReviewsWithFilters(
+                ratings, startDate, endDate, userFullName, isHidden);
         return reviews.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
@@ -170,6 +184,7 @@ public class ReviewService {
         dto.setOrderDetailId(review.getOrderDetail().getOrderDetailId());
         dto.setProductName(review.getOrderDetail().getProductVariant().getProduct().getName());
         dto.setProductId(review.getOrderDetail().getProductVariant().getProduct().getProductId());
+        dto.setIsHidden(review.getIsHidden()); // Ánh xạ trường isHidden
 
         if (review.getMedia() != null) {
             dto.setMedia(review.getMedia().stream().map(media -> {

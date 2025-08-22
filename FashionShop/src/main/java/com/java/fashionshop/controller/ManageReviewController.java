@@ -26,8 +26,9 @@ public class ManageReviewController {
             @RequestParam(required = false) List<Integer> ratings,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(required = false) String userFullName) {
-        List<ReviewDTO> reviews = reviewService.getAllReviews(ratings, startDate, endDate, userFullName);
+            @RequestParam(required = false) String userFullName,
+            @RequestParam(required = false) Boolean isHidden) {
+        List<ReviewDTO> reviews = reviewService.getAllReviews(ratings, startDate, endDate, userFullName, isHidden);
         return ResponseEntity.ok(reviews);
     }
 
@@ -39,8 +40,16 @@ public class ManageReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteReview(@PathVariable Integer reviewId) {
         reviewService.deleteReview(reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{reviewId}/hide")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> hideReview(@PathVariable Integer reviewId, @RequestParam boolean hide) {
+        reviewService.hideReview(reviewId, hide);
         return ResponseEntity.noContent().build();
     }
 }
