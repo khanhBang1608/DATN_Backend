@@ -26,10 +26,10 @@ public class PromotionsEntity {
     private Double discountAmount;
 
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     private Boolean status;
 

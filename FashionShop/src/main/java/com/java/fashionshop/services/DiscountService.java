@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.java.fashionshop.dto.DiscountDTO;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,11 +65,11 @@ public class DiscountService {
         entity.setStatus(bean.getStatus());
     }
     public List<DiscountEntity> getAvailableDiscounts() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now(); 
         return jpaDiscount.findAll().stream()
             .filter(d -> Boolean.TRUE.equals(d.getStatus()))
-            .filter(d -> (d.getStartDate() == null || !d.getStartDate().isAfter(today)) &&
-                         (d.getEndDate() == null || !d.getEndDate().isBefore(today)))
+            .filter(d -> (d.getStartDate() == null || !d.getStartDate().isAfter(now)) &&
+                         (d.getEndDate() == null || !d.getEndDate().isBefore(now)))
             .collect(Collectors.toList());
     }
 
@@ -86,9 +87,8 @@ public class DiscountService {
         dto.setEndDate(entity.getEndDate());
         dto.setStatus(entity.getStatus());
         
-        // Không set danh sách OrderEntity để tránh vòng lặp vô hạn
-        dto.setOrders(null); // hoặc bỏ dòng này nếu không cần trả ra
-
+        
+        dto.setOrders(null); 
         return dto;
     }
 
@@ -99,11 +99,11 @@ public class DiscountService {
     }
 
     public List<DiscountDTO> getAvailableDiscountDTOs() {
-        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now(); 
         return jpaDiscount.findAll().stream()
                 .filter(d -> Boolean.TRUE.equals(d.getStatus()))
-                .filter(d -> (d.getStartDate() == null || !d.getStartDate().isAfter(today)) &&
-                             (d.getEndDate() == null || !d.getEndDate().isBefore(today)))
+                .filter(d -> (d.getStartDate() == null || !d.getStartDate().isAfter(now)) &&
+                             (d.getEndDate() == null || !d.getEndDate().isBefore(now)))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

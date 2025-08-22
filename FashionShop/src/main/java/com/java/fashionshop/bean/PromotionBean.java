@@ -27,10 +27,10 @@ public class PromotionBean {
     private Double discountAmount;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @NotNull(message = "Ngày kết thúc không được để trống")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     @NotNull(message = "Trạng thái không được để trống")
     private Boolean status;
