@@ -187,7 +187,7 @@ public class OrderService {
 
         return convertToDTO(order);
     }
-
+    
     @Transactional
     public void cancelOrder(Integer orderId) {
         Integer userId = getAuthenticatedUserId();
@@ -203,14 +203,13 @@ public class OrderService {
             throw new IllegalStateException("Chỉ có thể hủy order ở trạng thái Pending");
         }
 
-        // Hoàn stock nếu order đã trừ stock (trường hợp bất thường)
-        if (order.getStatus() == 3) {
-            adjustStockForOrder(order, true);
-        }
+        // Hoàn stock khi hủy đơn hàng
+        adjustStockForOrder(order, true);
 
         order.setStatus(5); // 5: Cancelled
         orderRepository.save(order);
     }
+
 
 	@Transactional
 	public OrderDTO updateOrder(Integer orderId, OrderDTO orderDTO) {
@@ -255,9 +254,9 @@ public class OrderService {
 					.orElseThrow(() -> new EntityNotFoundException(
 							"Không tìm thấy product variant với id: " + detailDTO.getProductVariantId()));
 
-			if (variant.getStock() < detailDTO.getQuantity()) {
-				throw new RuntimeException("Hết hàng cho variant: " + variant.getProductVariantId());
-			}
+//			if (variant.getStock() < detailDTO.getQuantity()) {
+//				throw new RuntimeException("Hết hàng cho variant: " + variant.getProductVariantId());
+//			}
 
 			OrderDetailEntity detail = new OrderDetailEntity();
 			detail.setOrder(order);
@@ -270,17 +269,6 @@ public class OrderService {
 		if ((orderDTO.getStatus() == 2 || orderDTO.getStatus() == 3) && previousStatus != orderDTO.getStatus()) {
 			order.setPaymentStatus(1); // Đã thanh toán
 		}
-
-		// Hoàn stock nếu chuyển từ trạng thái 3 sang trạng thái khác
-		else if (previousStatus == 3 && orderDTO.getStatus() == 6) {
-			adjustStockForOrder(order, true);
-			order.setPaymentStatus(2);
-		}
-
-//		if (orderDTO.getStatus() == 2 && previousStatus != 2) {
-//			// Chuyển sang đang giao hàng => trừ stock
-//			adjustStockForOrder(order, false);
-//		}
 
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
 		order = orderRepository.save(order);
@@ -604,6 +592,7 @@ public class OrderService {
 	private String convertListToJson(List<String> list) {
 		return list != null ? new Gson().toJson(list) : "[]";
 	}
+	
 	@Transactional
 	public void acceptReturn(Integer orderId) {
 		OrderEntity order = orderRepository.findById(orderId)
@@ -641,9 +630,10 @@ public class OrderService {
 		returnRequest.setStatus(2); // Từ chối
 		jpaOrderReturnEntity.save(returnRequest);
 
-		order.setStatus(3); // Trả lại trạng thái "đã giao"
+		order.setStatus(7); // Trả lại trạng thái "từ chối trả hàng"
 		orderRepository.save(order);
 	}
+	
 	public OrderReturnDTO getReturnRequestByOrderId(Integer orderId) {
 		OrderEntity order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng với id: " + orderId));
@@ -680,4 +670,13 @@ public class OrderService {
 	    return orderRepository.findByUser_UserId(userId, pageable)
 	            .map(this::convertToDTO);
 	}
+	
+	public boolean isOrderReturnRejected(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        return jpaOrderReturnEntity.findByOrder(order)
+                .map(returnRequest -> returnRequest.getStatus() == 2)
+                .orElse(false);
+    }
 }
