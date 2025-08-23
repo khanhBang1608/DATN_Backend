@@ -24,11 +24,34 @@ public interface JpaOrder extends JpaRepository<OrderEntity, Integer> {
 	BigDecimal getTotalRevenueWithPaymentStatus1();
 
 	
-	@Query("SELECT NEW map(FUNCTION('MONTH', o.orderDate) AS month, SUM(o.totalAmount) AS revenue) " +
-		       "FROM OrderEntity o " +
-		       "WHERE o.status = 3 OR (LOWER(o.paymentMethod) = 'vnpay' AND o.status <> 3) " +
-		       "GROUP BY FUNCTION('MONTH', o.orderDate)")
-		List<Map<String, Object>> getMonthlyRevenue();
+	@Query(value = """
+		    WITH Months AS (
+		        SELECT 1 AS monthNum UNION ALL
+		        SELECT 2 UNION ALL
+		        SELECT 3 UNION ALL
+		        SELECT 4 UNION ALL
+		        SELECT 5 UNION ALL
+		        SELECT 6 UNION ALL
+		        SELECT 7 UNION ALL
+		        SELECT 8 UNION ALL
+		        SELECT 9 UNION ALL
+		        SELECT 10 UNION ALL
+		        SELECT 11 UNION ALL
+		        SELECT 12
+		    )
+		    SELECT 
+		        m.monthNum AS month,
+		        COALESCE(SUM(o.total_amount), 0) AS revenue
+		    FROM Months m
+		    LEFT JOIN [Order] o 
+		        ON MONTH(o.order_date) = m.monthNum
+		        AND o.payment_status = 1 
+		    GROUP BY m.monthNum
+		    ORDER BY m.monthNum
+		""", nativeQuery = true)
+		List<Map<String, Object>> getMonthlyRevenueFullYear();
+
+	
 	@Query("""
 		    SELECT p, SUM(od.quantity) as totalSold
 		    FROM OrderEntity o

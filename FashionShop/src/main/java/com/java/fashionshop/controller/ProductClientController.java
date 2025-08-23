@@ -51,19 +51,11 @@ public class ProductClientController {
     @Autowired
     private AttributeService attributeService;
     
-    @GetMapping("/products/top10")
-    public ResponseEntity<?> getTopNewestProductsWithVariants(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<ProductEntity> products = productService.findTopNewestProductsWithVariants(pageable);
-
-        Page<ProductDTO> result = products.map(productService::convertToDTO);
-
+    @GetMapping("/products/top8")
+    public ResponseEntity<?> getTop8NewestProductsWithVariants() {
+        List<ProductDTO> result = productService.findTop8NewestProductsWithVariants();
         return ResponseEntity.ok(result);
     }
-
     
     @GetMapping("/products")
     public ResponseEntity<?> getAllProducts(

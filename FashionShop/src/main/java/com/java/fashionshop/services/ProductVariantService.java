@@ -87,12 +87,8 @@ public class ProductVariantService {
         entity.setStock(bean.getStock());
 
         MultipartFile file = bean.getImage();
-       
 
-        // BẮT BUỘC PHẢI CÓ ẢNH
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng chọn ảnh cho biến thể.");
-        }
+        // Ảnh KHÔNG bắt buộc
         if (file != null && !file.isEmpty()) {
             try {
                 String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
@@ -107,6 +103,7 @@ public class ProductVariantService {
 
         return jpaProductVariant.save(entity);
     }
+
 
 
     public ProductVariantEntity update(Integer variantId, ProductVariantBean bean) {

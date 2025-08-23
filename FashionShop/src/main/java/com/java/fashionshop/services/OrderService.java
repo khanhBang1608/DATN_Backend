@@ -103,7 +103,8 @@ public class OrderService {
 	public OrderDTO createOrder(OrderCreateRequest request) {
 		Integer userId = getAuthenticatedUserId();
 		if (request.getIdempotencyKey() != null) {
-			OrderEntity existingOrder = orderRepository.findByIdempotencyKey(request.getIdempotencyKey());
+			OrderEntity existingOrder = orderRepository
+					.findByIdempotencyKey((request.getIdempotencyKey()));
 			if (existingOrder != null) {
 				return convertToDTO(existingOrder);
 			}
@@ -131,7 +132,7 @@ public class OrderService {
 
 		if (request.getDiscountCode() != null) {
 			DiscountEntity discount = discountRepository.findByDiscountCode(request.getDiscountCode()).orElse(null);
-			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
+			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDateTime.now())) {
 				if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
 					discount.setQuantityLimit(discount.getQuantityLimit() - 1);
 					discountRepository.save(discount);
@@ -665,7 +666,7 @@ public class OrderService {
 		returnRequest.setStatus(2); // Từ chối
 		jpaOrderReturnEntity.save(returnRequest);
 
-		order.setStatus(3); // Trả lại trạng thái "đã giao"
+		order.setStatus(7); // Trả lại trạng thái "từ chối trả hàng"
 		orderRepository.save(order);
 	}
 	public OrderReturnDTO getReturnRequestByOrderId(Integer orderId) {
@@ -922,4 +923,13 @@ public class OrderService {
 				return 0; // Pending
 		}
 	}
+
+	public boolean isOrderReturnRejected(Integer orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        return jpaOrderReturnEntity.findByOrder(order)
+                .map(returnRequest -> returnRequest.getStatus() == 2)
+                .orElse(false);
+    }
 }

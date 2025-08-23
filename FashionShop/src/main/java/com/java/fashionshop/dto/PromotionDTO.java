@@ -21,9 +21,9 @@ public class PromotionDTO {
 
     private Double discountAmount;
 
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     private Boolean status;
 

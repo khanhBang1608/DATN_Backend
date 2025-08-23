@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
-
+import java.time.LocalDateTime;
 @Entity
 @Table(name = "discount")
 @Data
@@ -31,10 +31,10 @@ public class DiscountEntity {
     private Integer quantityLimit;
 
     @Column(name = "start_date")
-    private LocalDate startDate; 
+    private LocalDateTime startDate; 
 
     @Column(name = "end_date")
-    private LocalDate endDate;   
+    private LocalDateTime endDate;   
 
     private Boolean status;
 

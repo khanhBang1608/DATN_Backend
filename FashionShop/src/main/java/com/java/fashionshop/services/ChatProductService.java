@@ -45,11 +45,13 @@ public class ChatProductService {
                                     v.getSizeName() != null ? v.getSizeName() : "-",
                                     v.getPrice()))
                             .collect(Collectors.joining("; "));
-                    return String.format("- %s: còn %d biến thể (%s)",
+                    return String.format(
+                            "* **%s**  \n  - Ngày tạo: %s  \n  - Còn %d biến thể (%s)",
                             dto.getName(),
-                            
+                            dto.getDateCreated() != null ? dto.getDateCreated().toLocalDate() : "Không rõ",
                             dto.getVariants().size(),
-                            variants);
+                            variants
+                    );
                 })
                 .collect(Collectors.joining("\n"));
 

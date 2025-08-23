@@ -103,7 +103,7 @@ public class PaymentService {
 		// Xử lý mã giảm giá
 		if (discountCode != null && !discountCode.trim().isEmpty()) {
 			DiscountEntity discount = discountRepository.findByDiscountCode(discountCode).orElse(null);
-			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDate.now())) {
+			if (discount != null && discount.getStatus() && discount.getEndDate().isAfter(LocalDateTime.now())) {
 				if (discount.getQuantityLimit() != null && discount.getQuantityLimit() > 0) {
 					discount.setQuantityLimit(discount.getQuantityLimit() - 1);
 					discountRepository.save(discount);
