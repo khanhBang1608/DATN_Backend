@@ -158,6 +158,16 @@ public class ReviewService {
 
         reviewRepository.delete(review);
     }
+    
+    @Transactional
+    public void deleteReviewByAdmin(Integer reviewId) {
+        ReviewEntity review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+
+        // Admin có quyền xóa review mà không cần check chủ sở hữu
+        reviewRepository.delete(review);
+    }
+
 
     private ReviewDTO convertToDTO(ReviewEntity review) {
         ReviewDTO dto = new ReviewDTO();
