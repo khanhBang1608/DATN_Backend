@@ -267,7 +267,7 @@ public class OrderService {
 			order.getOrderDetails().add(detail);
 			totalAmount = totalAmount.add(detail.getPrice().multiply(new BigDecimal(detail.getQuantity())));
 		}
-		if ((orderDTO.getStatus() == 2 || orderDTO.getStatus() == 3) && previousStatus != orderDTO.getStatus()) {
+		if ((orderDTO.getStatus() == 3 || orderDTO.getStatus() == 3) && previousStatus != orderDTO.getStatus()) {
 			order.setPaymentStatus(1); // Đã thanh toán
 		}
 
