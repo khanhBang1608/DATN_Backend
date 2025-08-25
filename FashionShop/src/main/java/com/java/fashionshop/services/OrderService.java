@@ -641,7 +641,7 @@ public class OrderService {
 			String content = "Xin chào " + order.getUser().getFullName() + ",\n\n"
 					+ "Rất tiếc, yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã bị TỪ CHỐI.\n"
 					+ "Nếu bạn có thắc mắc hoặc cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi:\n"
-					+ "- Email: Bangtkpc08621@gmail.com\n" + "- SĐT: 077.9824.008\n\n"
+					+ "- Email: customers@lhex.vn\n" + "- SĐT: 0378 447 716\n\n"
 					+ "Xin cảm ơn bạn đã tin tưởng mua sắm tại L'Hex Shop!";
 
 			emailService.sendEmail(order.getUser().getEmail(), subject, content);
