@@ -496,7 +496,7 @@ public class OrderService {
 			document.add(new Paragraph("").setMarginBottom(20));
 
 			Paragraph footer = new Paragraph("Cảm ơn quý khách đã mua sắm tại L'Hex Shop!\n"
-					+ "Vui lòng liên hệ hỗ trợ qua email Bytecrew@lhex.vn hoặc hotline  0378 447 716.").setFont(font)
+					+ "Vui lòng liên hệ hỗ trợ qua email customers@lhex.vn hoặc hotline  0378 447 716.").setFont(font)
 					.setFontSize(10).setTextAlignment(TextAlignment.CENTER).setFontColor(ColorConstants.DARK_GRAY)
 					.setMarginTop(10);
 			document.add(footer);
