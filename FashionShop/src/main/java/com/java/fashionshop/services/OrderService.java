@@ -69,7 +69,7 @@ public class OrderService {
 
 	@Autowired
 	private EmailService emailService;
-	
+
 	public OrderEntity save(OrderEntity order) {
 		return orderRepository.save(order);
 	}
@@ -273,19 +273,27 @@ public class OrderService {
 
 		order.setTotalAmount(totalAmount.add(order.getShippingFee()).subtract(order.getDiscountAmount()));
 		order = orderRepository.save(order);
-		
-	    if ((previousStatus == 0 || previousStatus == 1) && orderDTO.getStatus() == 5) {
-	        try {
-	            String subject = "Thông báo hủy đơn hàng #" + order.getOrderId();
-	            String content = "Đơn hàng #" + order.getOrderId() + " của bạn đã bị hủy.";
-	            emailService.sendEmail(order.getUser().getEmail(), subject, content);
-	         // Hoàn stock khi hủy đơn hàng
-	    		adjustStockForOrder(order, true);
-	        } catch (Exception e) {
-	            e.printStackTrace(); // log lỗi gửi email, không rollback transaction
-	        }
-	    }
-		
+
+		if ((previousStatus == 0 || previousStatus == 1) && orderDTO.getStatus() == 5) {
+		    try {
+		        String subject = "Thông báo hủy đơn hàng #" + order.getOrderId();
+		        String content = "Xin chào " + order.getUser().getFullName() + ",\n\n"
+		                + "Đơn hàng #" + order.getOrderId() + " của bạn đã bị HỦY.\n"
+		                + "Lý do: Đơn hàng không đáp ứng điều kiện xử lý hoặc theo yêu cầu từ khách hàng.\n\n"
+		                + "Nếu bạn cần thêm thông tin hoặc hỗ trợ, vui lòng liên hệ với chúng tôi:\n"
+		                + "- Email: Bangtkpc08621@gmail.com\n"
+		                + "- SĐT: 077.9824.008\n\n"
+		                + "Xin cảm ơn bạn đã quan tâm và ủng hộ FashionShop!";
+		        
+		        emailService.sendEmail(order.getUser().getEmail(), subject, content);
+
+		        // Hoàn stock khi hủy đơn hàng
+		        adjustStockForOrder(order, true);
+		    } catch (Exception e) {
+		        e.printStackTrace(); // log lỗi gửi email, không rollback transaction
+		    }
+		}
+
 		return convertToDTO(order);
 	}
 
@@ -600,7 +608,10 @@ public class OrderService {
 
 		try {
 			String subject = "Kết quả xử lý yêu cầu trả hàng - Đơn #" + order.getOrderId();
-			String content = "Yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã được CHẤP NHẬN.";
+			String content = "Yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã được CHẤP NHẬN.\n\n"
+					+ "Vui lòng liên hệ với chúng tôi để được hoàn tiền:\n" + "- Email: Bangtkpc08621@gmail.com\n"
+					+ "- SĐT: 077.9824.008\n\n" + "Xin cảm ơn bạn đã tin tưởng mua sắm tại L'Hex Shop!";
+
 			emailService.sendEmail(order.getUser().getEmail(), subject, content);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -627,11 +638,17 @@ public class OrderService {
 
 		try {
 			String subject = "Kết quả xử lý yêu cầu trả hàng - Đơn #" + order.getOrderId();
-			String content = "Yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã bị TỪ CHỐI.";
+			String content = "Xin chào " + order.getUser().getFullName() + ",\n\n"
+					+ "Rất tiếc, yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã bị TỪ CHỐI.\n"
+					+ "Nếu bạn có thắc mắc hoặc cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi:\n"
+					+ "- Email: Bangtkpc08621@gmail.com\n" + "- SĐT: 077.9824.008\n\n"
+					+ "Xin cảm ơn bạn đã tin tưởng mua sắm tại L'Hex Shop!";
+
 			emailService.sendEmail(order.getUser().getEmail(), subject, content);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 
 	public OrderReturnDTO getReturnRequestByOrderId(Integer orderId) {

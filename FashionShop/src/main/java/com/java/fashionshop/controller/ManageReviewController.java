@@ -39,7 +39,8 @@ public class ManageReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Integer reviewId) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteReviewByAdmin(@PathVariable Integer reviewId) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.noContent().build();
     }
