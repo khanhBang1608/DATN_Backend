@@ -281,8 +281,8 @@ public class OrderService {
 		                + "Đơn hàng #" + order.getOrderId() + " của bạn đã bị HỦY.\n"
 		                + "Lý do: Đơn hàng không đáp ứng điều kiện xử lý hoặc theo yêu cầu từ khách hàng.\n\n"
 		                + "Nếu bạn cần thêm thông tin hoặc hỗ trợ, vui lòng liên hệ với chúng tôi:\n"
-		                + "- Email: Bangtkpc08621@gmail.com\n"
-		                + "- SĐT: 077.9824.008\n\n"
+		                + "- Email: customers@lhex.vn\n"
+		                + "- SĐT: customers@lhex.vn\n\n"
 		                + "Xin cảm ơn bạn đã quan tâm và ủng hộ FashionShop!";
 		        
 		        emailService.sendEmail(order.getUser().getEmail(), subject, content);
@@ -392,7 +392,7 @@ public class OrderService {
 					.setFontSize(12).setTextAlignment(TextAlignment.LEFT));
 			document.add(new Paragraph("Địa chỉ: Toà nhà FPT Polytechnic, Đ. Số 22, Thường Thạnh, Cái Răng, Cần Thơ")
 					.setFont(font).setFontSize(10));
-			document.add(new Paragraph("Số điện thoại:  0378 447 716 | Email: Bytecrew@lhex.vn").setFont(font)
+			document.add(new Paragraph("Số điện thoại:  0378 447 716 | Email: customers@lhex.vn").setFont(font)
 					.setFontSize(10).setMarginBottom(20));
 
 			document.add(new Paragraph("").setBorderBottom(new SolidBorder(brandColor, 1)).setMarginBottom(10));
@@ -609,8 +609,8 @@ public class OrderService {
 		try {
 			String subject = "Kết quả xử lý yêu cầu trả hàng - Đơn #" + order.getOrderId();
 			String content = "Yêu cầu trả hàng của bạn cho đơn hàng #" + order.getOrderId() + " đã được CHẤP NHẬN.\n\n"
-					+ "Vui lòng liên hệ với chúng tôi để được hoàn tiền:\n" + "- Email: Bangtkpc08621@gmail.com\n"
-					+ "- SĐT: 077.9824.008\n\n" + "Xin cảm ơn bạn đã tin tưởng mua sắm tại L'Hex Shop!";
+					+ "Vui lòng liên hệ với chúng tôi để được hoàn tiền:\n" + "- Email: customers@lhex.vn\n"
+					+ "- SĐT: 0378 447 716\n\n" + "Xin cảm ơn bạn đã tin tưởng mua sắm tại L'Hex Shop!";
 
 			emailService.sendEmail(order.getUser().getEmail(), subject, content);
 		} catch (Exception e) {
