@@ -179,7 +179,7 @@ public class PaymentController {
     <h2 style="color: #0066cc; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 10px;">HÓA ĐƠN BÁN HÀNG</h2>
     <p style="font-size: 12px; font-weight: bold; text-align: left;">CÔNG TY CỔ PHẦN L'HEX INTERNATIONAL FASHION TRADING</p>
     <p style="font-size: 10px; text-align: left;">Địa chỉ: Toà nhà FPT Polytechnic, Đ. Số 22, Thường Thạnh, Cái Răng, Cần Thơ</p>
-    <p style="font-size: 10px; text-align: left; margin-bottom: 20px;">Số điện thoại: 0378 447 716 | Email: Bytecrew@lhex.vn</p>
+    <p style="font-size: 10px; text-align: left; margin-bottom: 20px;">Số điện thoại: 0378 447 716 | Email: customers@lhex.vn</p>
     <div style="border-bottom: 1px solid #0066cc; margin-bottom: 10px;"></div>
     <table style="width: 100%%; font-size: 10px; margin-bottom: 20px;">
         <tr>
